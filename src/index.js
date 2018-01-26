@@ -7,26 +7,32 @@ import turfDestination from '@turf/destination';
 let id = 0;
 
 L.TrueSize = L.Layer.extend({
-  geoJSON: [],
+  geoJSON: {
+    "type": "Feature",
+    "properties": {},
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": []
+    }
+  },
   options: {
     style: {
-      color: '#FF6666',
+      color: '#886699',
       weight: 1,
       opacity: 1,
       dashArray: "5, 10"
     }
   },
 
-  initialize(geoJSON, options) {
+  initialize(geoJSON = this.geoJSON, options = this.options) {
     L.Util.setOptions(this, options);
 
-    this._options = options;
-
-    this.initGeoJson(geoJSON);
+    this._initGeoJson(geoJSON, options);
   },
 
-  initGeoJson(geoJSON) {
-    this._geoJSONLayer = L.geoJSON(geoJSON, this._options);
+  _initGeoJson(geoJSON, options) {
+    this._geoJSONLayer = L.geoJSON(geoJSON, options);
+    // for unique plugin id
     this._currentId = id++;
   },
 
@@ -34,9 +40,17 @@ L.TrueSize = L.Layer.extend({
     this._map = map;
     this._geoJSONLayer.addTo(this._map);
     this._makeDraggable(this._geoJSONLayer._layers);
+  },
 
+  _makeDraggable(layersObj) {
+    // use the first object(with dynmaic key) in the layersObj
+    // because we initialize for every feature its own leaflet-geoJSON layer
+    const currentLayer = layersObj[Object.keys(layersObj)[0]];
 
-    this.update(this._map);
+    const draggable = new L.Draggable(currentLayer._path);
+    draggable
+      .on('drag', evt => this._onDrag(evt, currentLayer))
+      .enable();
   },
 
   _onDrag(evt, layer) {
@@ -45,23 +59,23 @@ L.TrueSize = L.Layer.extend({
     const newCenter = [latlng.lng, latlng.lat];
 
     const prevBearingDistance = this._getBearingDistance(layer);
-
     this._redraw(layer, newCenter, prevBearingDistance);
   },
 
   _getBearingDistance(layer) {
+    // use turfcenter function instead of layer getcenter, because
+    // layer will be added to map later
     const center = turfCenter(layer.feature).geometry.coordinates;
-
     return layer.feature.geometry.coordinates[0].map(coord => {
       const bearing = turfBearing(center, coord);
-      const distance = turfDistance(center, coord);
+      const distance = turfDistance(center, coord, { units: 'kilometers' });
       return { bearing, distance };
     });
   },
 
   _redraw(layer, newCenter, bearingDistance) {
     const newPoints = bearingDistance.map(params => {
-      return turfDestination(newCenter, params.distance, params.bearing).geometry.coordinates;
+      return turfDestination(newCenter, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
     });
 
     const newFeature = {
@@ -78,14 +92,6 @@ L.TrueSize = L.Layer.extend({
     this._makeDraggable(this._geoJSONLayer._layers);
   },
 
-  _makeDraggable(layersObj) {
-    const currentLayer = layersObj[Object.keys(layersObj)[0]];
-    const draggable = new L.Draggable(currentLayer._path);
-    draggable
-      .on('drag', evt => this._onDrag(evt, currentLayer))
-      .enable();
-  },
-
   getEvents() {
     return {
       zoom: this.update,
@@ -98,10 +104,9 @@ L.TrueSize = L.Layer.extend({
   },
 
   onRemove(map) {
-    // this._map = map;
-    // this._currentPath.parentNode.removeChild(this._currentPath);
-    // this._map.removeLayer(this._currentMarker);
-  }
+    this._map = map;
+    this._map.removeLayer(this._geoJSONLayer);
+  },
 });
 
 L.trueSize = (geoJSON, options) => new L.TrueSize(geoJSON, options);
