@@ -1,3 +1,41 @@
+const Playground = {
+  init(_config = {}) {
+    this._container = document.querySelector(_config.containerId);
+
+    this._map = this.mountMap(this._container);
+    this._plugin = this.mountPlugin(this._map, _config.data, _config.options);
+    this.addButtonHandler(this._container, this._map, this._plugin);
+  },
+
+  mountMap(_container) {
+    const mapNode = _container.querySelector('.map');
+
+    const map = L.map(mapNode, {
+      center: [53, 13.4],
+      zoom: 2,
+      zoomControl: false,
+      zoomDelta: .25,
+      zoomSnap: .25
+    });
+
+    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
+      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
+      detectRetina: true
+    }).addTo(map);
+
+    return map;
+  },
+
+  mountPlugin(_map, _data, _options) {
+    return new L.TrueSize(_data, _options).addTo(_map);
+  },
+
+  addButtonHandler(_container, _map, _plugin) {
+    const removeBtn = _container.querySelector('.remove');
+    removeBtn.addEventListener('click', () => _map.removeLayer(_plugin));
+  },
+}
+
 const data = {
   "type": "Feature",
   "properties": {},
@@ -47,31 +85,4 @@ const options = {
   }
 };
 
-const Playground = {
-  init() {
-    this._container = document.querySelector('#map');
-    this._map = null;
-
-    this.mountMap();
-    this.draw();
-  },
-  mountMap() {
-    this._map = L.map('map', {
-      center: [53, 13.4],
-      zoom: 2,
-      zoomControl: false,
-      zoomDelta: .25,
-      zoomSnap: .25
-    });
-
-    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
-      detectRetina: true
-    }).addTo(this._map);
-  },
-  draw() {
-    new L.TrueSize(data, options).addTo(this._map);
-  }
-}
-
-Playground.init();
+Playground.init({containerId: '#map1', data, options});
