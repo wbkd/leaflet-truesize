@@ -280,10 +280,10 @@ const data = {
 
 new L.trueSize(data,{
   style: {
-    color: '#000',
+    color: '#FF0000',
     weight: 1,
     opacity: 1,
-    dashArray: "5, 10"
+    dashArray: "7, 10"
   }
 }).addTo(map);
         </code></pre>
@@ -316,7 +316,7 @@ new L.trueSize(data,{
     </div>
 
     <div class="centered" id="options">
-      <h3 class="sectiontitle">Options</h3>
+      <h3 class="sectiontitle">Options.style</h3>
       <table>
         <colgroup>
           <col width="15%">
@@ -396,7 +396,7 @@ new L.trueSize(data,{
         color: '#FF0000',
         weight: 1,
         opacity: 1,
-        dashArray: "5, 10"
+        dashArray: "7, 10"
       }
     }).addTo(map);
 
@@ -441,87 +441,23 @@ new L.trueSize(data,{
   const options = [{
     option: 'color',
     type: 'String',
-    default: '#222222',
-    description: 'Color of the swoopy arrow.'
+    default: '#886699',
+    description: 'Color for the outline and the background of the draggable area.'
   }, {
     option: 'weight',
-    type: 'String',
+    type: 'Number',
     default: 1,
-    description: 'Weight of the arrow.'
+    description: 'Weight of the outline.'
   }, {
     option: 'opacity',
     type: 'Number',
     default: 1,
-    description: 'Opacity of the arrow.'
+    description: 'Opacity of the outline.'
   }, {
-    option: 'factor',
-    type: 'Number',
-    default: 0.5,
-    description: 'The higher the factor the more curved is the arrow.'
-  },
-  {
-    option: 'arrowFilled',
-    type: 'Boolean',
-    default: false,
-    description: 'Define the style of the arrow head.'
-  },
-  {
-    option: 'hideArrowHead',
-    type: 'Boolean',
-    default: false,
-    description: 'Hide or show the arrow head.'
-  },
-  {
-    option: 'arrowId',
+    option: 'dashArray',
     type: 'String',
-    default: null,
-    description: 'Set a predefined <a href="https://developer.mozilla.org/de/docs/Web/SVG/Element/marker" target="_blank">custom marker</a> as arrow head.'
-  },
-  {
-    option: 'minZoom',
-    type: 'Number',
-    default: 0,
-    description: 'The minimum zoom level where the arrow is visible.'
-  }, {
-    option: 'maxZoom',
-    type: 'Number',
-    default: 22,
-    description: 'The maximum zoom level where the arrow is visible.'
-  }, {
-    option: 'label',
-    type: 'String',
-    default: '""',
-    description: 'Text label at the fromLngLat position.'
-  }, {
-    option: 'labelClassName',
-    type: 'String',
-    default: '""',
-    description: 'A class that gets addded to the label.'
-  }, {
-    option: 'labelFontSize',
-    type: 'Number',
-    default: '12',
-    description: 'Font size of the text label.'
-  }, {
-    option: 'labelColor',
-    type: 'String',
-    default: '#222222',
-    description: 'Font color of the text label.'
-  },  {
-    option: 'html',
-    type: 'String',
-    default: '""',
-    description: 'Custom html label at the fromLngLat position. Replaces normal text label.'
-  }, {
-    option: 'iconAnchor',
-    type: 'Point',
-    default: '[0, 0]',
-    description: 'Point of the icon which will correspond to marker position'
-  }, {
-    option: 'iconSize',
-    type: 'Point',
-    default: '[50, 20]',
-    description: 'Size of the text in pixels. We are using a Leaflet divIcon in order to create the text.'
+    default: '5, 10',
+    description: 'Style of the outline.'
   }];
 
   const tbody = document.querySelector('#tbody-options');

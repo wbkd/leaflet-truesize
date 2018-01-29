@@ -42,7 +42,7 @@ export default {
     }),
     !isProd && serve({
       port: 3000,
-      contentBase: ['playground', 'build']
+      contentBase: ['docs', 'playground', 'build']
     }),
     !isProd && html({
       include: 'playground/index.html'
