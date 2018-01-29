@@ -78,10 +78,10 @@ const data = {
 
 const options = {
   style: {
-    color: '#FF6666',
-    weight: 1,
+    color: '#FF00FF',
+    weight: 2,
     opacity: 1,
-    dashArray: "5, 10"
+    dashArray: "2, 10"
   }
 };
 

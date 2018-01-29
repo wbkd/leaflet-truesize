@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="A plugin for adding beautiful swoopy arrows on top of Leaflet maps.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Leaflet Truesize</title>
+
+  <link href="https://unpkg.com/normalize.css/normalize.css" rel="stylesheet" >
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/solarized-light.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,700" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+  <link href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" rel="stylesheet" integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ==" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js" integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log==" crossorigin=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/javascript.min.js"></script>
+  <script src="Leaflet.TrueSize.min.js"></script>
+
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  <style>
+  html,
+  body {
+    height: 100%;
+    height: 100%;
+  }
+
+  html {
+    font-family: 'Roboto', sans-serif;
+    color: #212121;
+    background: #fefefc;
+    line-height: 1.4;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th {
+    text-align: left;
+    padding: 0 .75em
+  }
+
+  thead {
+    border-bottom: 1px solid #D4D4D4;
+  }
+
+  thead div {
+    padding-bottom: .75em;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #FDF9F7
+  }
+
+  td {
+    padding: 1em .7em;
+  }
+
+  a {
+    color: #64A7D9;
+    text-decoration: none;
+  }
+
+  pre {
+    margin: 0;
+  }
+
+  code, .code {
+    font-size: 15px;
+    font-family: "Roboto Mono";
+  }
+
+  .code.option {
+    color: #64A7D9;
+  }
+
+  .hljs {
+    background: none;
+    padding: 0;
+    overflow-x: visible;
+    line-height: 1.3;
+    color: #64A7D9;
+  }
+
+  .hljs.shell {
+    color: #676788;
+  }
+
+  .hljs-number {
+    color: #D6428D;
+  }
+
+  .hljs-attr {
+    color: #676788;
+  }
+
+  h1, h2, h3 {
+    font-weight: 300;
+    margin: 0;
+  }
+
+  header {
+    text-align: center;
+    margin: 3em 0 2em 0;
+  }
+
+  .toparrow {
+    display: none;
+  }
+
+  .subtitle {
+    color: #454545;
+    margin-top: .5em;
+    font-size: 1.2em
+  }
+
+  .sectiontitle {
+    margin: 2em 0 1em 0;
+    font-size: 1.2em;
+  }
+
+  .centered {
+    width: 100%;
+    margin: 0 auto;
+    max-width: 1000px;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  .bg {
+    width: 100%;
+    padding: 1.5em 0;
+    background: #FDF9F7;
+  }
+
+  .map-wrapper {
+    position: relative;
+  }
+
+  .activate-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index:1000;
+    background: #FDF9F7;
+    padding: .5em 1em;
+    font-family: 'Roboto', sans-serif;
+    border: none;
+    border-radius: 1px;
+    font-size: 13px;
+    box-shadow: 0 0 1px 2px rgba(0, 0, 0, .12);
+    font-weight: 700;
+    color: #676788;
+    cursor: pointer;
+    opacity: .5;
+    transition: .35s opacity;
+  }
+
+  .activate-btn:hover {
+    opacity: .8;
+    box-shadow: 0 0 4px 3px rgba(0, 0, 0, .15);
+  }
+
+  #map {
+    width: 100%;
+    height: 200px;
+    box-shadow: 0 2px 12px 2px rgba(0, 0, 0, .15);
+  }
+
+  .leaflet-tile-container img {
+    filter: contrast(1.15);
+  }
+
+  footer {
+    padding:4em 0 3em 0;
+    position: relative;
+  }
+
+  @media screen and (min-width: 768px) {
+    header {
+      margin: 6em 0 6em 0;
+      position: relative
+    }
+
+    .title {
+      font-size: 2.8em;
+    }
+
+    .subtitle {
+      margin-top: .3em;
+      font-size: 1.2em
+    }
+
+    .sectiontitle {
+      font-size: 1.5em;
+      margin:4em 0 1.2em 0;
+    }
+
+    #map {
+      height: 450px;
+    }
+
+    footer {
+      padding:8em 0 70px 0
+    }
+  }
+
+
+  </style>
+</head>
+<body>
+  <div id="docs">
+
+    <div class="centered">
+      <header>
+        <h1 class="title">Leaflet TrueSize</h1>
+        <h2 class="subtitle">A plugin for creating projection aware draggable polygons and polylines</h2>
+      </header>
+
+      <div class="map-wrapper">
+        <div id="map"></div>
+        <button class="activate-btn">Activate Map</button>
+      </div>
+
+    </div>
+
+    <div class="centered" id="installation">
+      <h3 class="sectiontitle">Installation</h3>
+      <p>Install with npm/yarn:</p>
+    </div>
+
+    <div class="bg">
+      <div class="centered">
+        <pre><code class="shell">npm install leaflet-truesize</code></pre>
+      </div>
+    </div>
+
+    <div class="centered" id="usage">
+      <h3 class="sectiontitle">Usage Example</h3>
+    </div>
+
+    <div class="bg">
+      <div class="centered">
+        <pre><code class="javascript">import L from 'leaflet';
+import 'leaflet-truesize';
+
+// create leaflet map ...
+
+const data = {
+  "type": "Feature",
+  "properties": {},
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          14.765625,
+          50.98609893339354
+        ],
+        [
+          19.0283203125,
+          49.15296965617042
+        ],
+        [
+          24.1259765625,
+          50.28933925329178
+        ],
+        [
+          21.3134765625,
+          54.87660665410869
+        ]
+      ]
+    ]
+  }
+};
+
+new L.trueSize(data,{
+  style: {
+    color: '#000',
+    weight: 1,
+    opacity: 1,
+    dashArray: "5, 10"
+  }
+}).addTo(map);
+        </code></pre>
+      </div>
+    </div>
+
+    <div class="centered" id="creation">
+      <h3 class="sectiontitle">Creation</h3>
+      <table>
+          <colgroup>
+            <col width="60%">
+            <col width="">
+          </colgroup>
+        <thead>
+          <tr>
+            <th><div>Factory</div></th>
+            <th><div>Description</div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">
+               L.trueSize(data, options)
+            </td>
+            <td>You need to pass the first paramter <span class="code">data</span> in order to create a swoopy arrow. The options paramter is not required.</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <div class="centered" id="options">
+      <h3 class="sectiontitle">Options</h3>
+      <table>
+        <colgroup>
+          <col width="15%">
+          <col width="15%">
+          <col width="10%">
+          <col width="60%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th><div>Option</div></th>
+            <th><div>Type</div></th>
+            <th><div>Default</div></th>
+            <th><div>Description</div></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-options"></tbody>
+      </table>
+
+    <footer>
+      made by <a href="https://webkid.io">webkid.io</a>
+    </footer>
+
+    </div>
+
+    <a href="https://github.com/wbkd/leaflet-swoopy" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#64A7D9; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+  </div>
+
+  <script>
+    const map = L.map('map', {
+      center: [53, 13.4],
+      zoom: 5,
+      zoomControl: false,
+      zoomDelta: .25,
+      zoomSnap: .25
+    });
+
+    let isEnabled = false;
+    disableMap();
+
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
+      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
+      detectRetina: true
+    }).addTo(map);
+
+    const data = {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              14.765625,
+              50.98609893339354
+            ],
+            [
+              19.0283203125,
+              49.15296965617042
+            ],
+            [
+              24.1259765625,
+              50.28933925329178
+            ],
+            [
+              21.3134765625,
+              54.87660665410869
+            ]
+          ]
+        ]
+      }
+    };
+
+    new L.trueSize(data,{
+      style: {
+        color: '#FF0000',
+        weight: 1,
+        opacity: 1,
+        dashArray: "5, 10"
+      }
+    }).addTo(map);
+
+    const activateBtn = document.querySelector('.activate-btn');
+    activateBtn.addEventListener('click', () => {
+      if (isEnabled) {
+        activateBtn.innerHTML = 'Activate Map';
+        disableMap()
+      } else {
+        activateBtn.innerHTML = 'Deactivate Map';
+        enableMap()
+      };
+      isEnabled = !isEnabled;
+    });
+
+    function disableMap() {
+      map.dragging.disable();
+      map.touchZoom.disable();
+      map.doubleClickZoom.disable();
+      map.scrollWheelZoom.disable();
+      map.boxZoom.disable();
+      map.keyboard.disable();
+      if (map.tap) map.tap.disable();
+      document.getElementById('map').style.cursor='default';
+    }
+
+    function enableMap() {
+      map.dragging.enable();
+      map.touchZoom.enable();
+      map.doubleClickZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.boxZoom.enable();
+      map.keyboard.enable();
+      if (map.tap) map.tap.enable();
+      document.getElementById('map').style.cursor='grab';
+    }
+
+  </script>
+
+  <script>
+  // create options table
+  const options = [{
+    option: 'color',
+    type: 'String',
+    default: '#222222',
+    description: 'Color of the swoopy arrow.'
+  }, {
+    option: 'weight',
+    type: 'String',
+    default: 1,
+    description: 'Weight of the arrow.'
+  }, {
+    option: 'opacity',
+    type: 'Number',
+    default: 1,
+    description: 'Opacity of the arrow.'
+  }, {
+    option: 'factor',
+    type: 'Number',
+    default: 0.5,
+    description: 'The higher the factor the more curved is the arrow.'
+  },
+  {
+    option: 'arrowFilled',
+    type: 'Boolean',
+    default: false,
+    description: 'Define the style of the arrow head.'
+  },
+  {
+    option: 'hideArrowHead',
+    type: 'Boolean',
+    default: false,
+    description: 'Hide or show the arrow head.'
+  },
+  {
+    option: 'arrowId',
+    type: 'String',
+    default: null,
+    description: 'Set a predefined <a href="https://developer.mozilla.org/de/docs/Web/SVG/Element/marker" target="_blank">custom marker</a> as arrow head.'
+  },
+  {
+    option: 'minZoom',
+    type: 'Number',
+    default: 0,
+    description: 'The minimum zoom level where the arrow is visible.'
+  }, {
+    option: 'maxZoom',
+    type: 'Number',
+    default: 22,
+    description: 'The maximum zoom level where the arrow is visible.'
+  }, {
+    option: 'label',
+    type: 'String',
+    default: '""',
+    description: 'Text label at the fromLngLat position.'
+  }, {
+    option: 'labelClassName',
+    type: 'String',
+    default: '""',
+    description: 'A class that gets addded to the label.'
+  }, {
+    option: 'labelFontSize',
+    type: 'Number',
+    default: '12',
+    description: 'Font size of the text label.'
+  }, {
+    option: 'labelColor',
+    type: 'String',
+    default: '#222222',
+    description: 'Font color of the text label.'
+  },  {
+    option: 'html',
+    type: 'String',
+    default: '""',
+    description: 'Custom html label at the fromLngLat position. Replaces normal text label.'
+  }, {
+    option: 'iconAnchor',
+    type: 'Point',
+    default: '[0, 0]',
+    description: 'Point of the icon which will correspond to marker position'
+  }, {
+    option: 'iconSize',
+    type: 'Point',
+    default: '[50, 20]',
+    description: 'Size of the text in pixels. We are using a Leaflet divIcon in order to create the text.'
+  }];
+
+  const tbody = document.querySelector('#tbody-options');
+
+  const trs = options.map(o => (`<tr>
+    <td class="code">${o.option}</td>
+    <td class="code">${o.type}</td>
+    <td class="code">${o.default}</td>
+    <td>${o.description}</td>
+  </tr>`)).join('');
+
+  tbody.innerHTML = trs;
+  </script>
+</body>
+</html>

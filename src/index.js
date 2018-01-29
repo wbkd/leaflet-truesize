@@ -24,10 +24,14 @@ L.TrueSize = L.Layer.extend({
     }
   },
 
-  initialize(geoJSON = this.geoJSON, options = this.options) {
-    L.Util.setOptions(this, options);
+  initialize(geoJSON = this.geoJSON, options) {
+    const optionsStyle = options ? options.style : {};
+    const style = Object.assign(this.options.style, optionsStyle);
+    const _options = {};
+    _options.style = style;
+    L.Util.setOptions(this, _options);
 
-    this._initGeoJson(geoJSON, options);
+    this._initGeoJson(geoJSON, _options);
   },
 
   _initGeoJson(geoJSON, options) {
