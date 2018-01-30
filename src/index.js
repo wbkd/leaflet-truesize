@@ -3,6 +3,7 @@ import turfCenter from '@turf/center';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import turfDestination from '@turf/destination';
+import { coordAll as turfCoordAll } from '@turf/meta';
 
 let id = 0;
 
@@ -31,6 +32,7 @@ L.TrueSize = L.Layer.extend({
     _options.style = style;
     L.Util.setOptions(this, _options);
 
+    this._geometryType = geoJSON.geometry.type;
     this._initGeoJson(geoJSON, _options);
   },
 
@@ -63,7 +65,6 @@ L.TrueSize = L.Layer.extend({
 
     const newCenter = [latlng.lng, latlng.lat];
     const prevBearingDistance = this._getBearingDistance(layer);
-
     this._redraw(layer, newCenter, prevBearingDistance);
   },
 
@@ -71,7 +72,7 @@ L.TrueSize = L.Layer.extend({
     // use turfcenter function instead of layer getcenter, because
     // layer will be added to map later
     const center = turfCenter(layer.feature).geometry.coordinates;
-    return layer.feature.geometry.coordinates[0].map(coord => {
+    return turfCoordAll(layer.feature).map(coord => {
       const bearing = turfBearing(center, coord);
       const distance = turfDistance(center, coord, { units: 'kilometers' });
       return { bearing, distance };
@@ -87,8 +88,8 @@ L.TrueSize = L.Layer.extend({
       "type": "Feature",
       "properties": {},
       "geometry": {
-        "type": "Polygon",
-        "coordinates": [newPoints]
+        "type": this._geometryType,
+        "coordinates": this._getCoordsByType(newPoints, this._geometryType)
       }
     }
 
@@ -101,6 +102,27 @@ L.TrueSize = L.Layer.extend({
     this._map = map;
     this._map.removeLayer(this._geoJSONLayer);
   },
+
+  _getCoordsByType(point, type) {
+    switch (type) {
+      case 'LineString': {
+        return point;
+        break;
+      }
+      case 'Polygon': {
+        return [point];
+        break;
+      }
+      case 'MultiPolygon': {
+        return [[point]];
+        break;
+      }
+      default: {
+        return [point];
+        break;
+      }
+    }
+  }
 });
 
 L.trueSize = (geoJSON, options) => new L.TrueSize(geoJSON, options);
