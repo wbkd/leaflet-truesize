@@ -1,41 +1,3 @@
-const Playground = {
-  init(_containerID, _data, _options = {}) {
-    this._container = document.querySelector(_containerID);
-
-    this._map = this.mountMap(this._container);
-    this._plugin = this.mountPlugin(this._map, _data, _options);
-    this.addButtonHandler(this._container, this._map, this._plugin);
-  },
-
-  mountMap(_container) {
-    const mapNode = _container.querySelector('.map');
-
-    const map = L.map(mapNode, {
-      center: [40, 60],
-      zoom: 3,
-      zoomControl: false,
-      zoomDelta: .25,
-      zoomSnap: .25
-    });
-
-    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
-      detectRetina: true
-    }).addTo(map);
-
-    return map;
-  },
-
-  mountPlugin(_map, _data, _options) {
-    return new L.TrueSize(_data, _options).addTo(_map);
-  },
-
-  addButtonHandler(_container, _map, _plugin) {
-    const removeBtn = _container.querySelector('.remove');
-    removeBtn.addEventListener('click', () => _map.removeLayer(_plugin));
-  },
-}
-
 const polygon = {
   "type": "Feature",
   "properties": {},
@@ -477,8 +439,43 @@ const options = {
   }
 };
 
-Playground.init(
-  '#map1',
-  linestring,
-  options
-);
+const Playground = {
+  init(_containerID, _data, _options = {}) {
+    this._container = document.querySelector(_containerID);
+
+    this._map = this.mountMap(this._container);
+    this._plugins = _data.map(entry => this.mountPlugin(this._map, entry, _options));
+    this._plugins.map(plugin => this.addButtonHandler(this._container, this._map, plugin));
+  },
+
+  mountMap(_container) {
+    const mapNode = _container.querySelector('.map');
+
+    const map = L.map(mapNode, {
+      center: [40, 60],
+      zoom: 3,
+      zoomControl: false,
+      zoomDelta: .25,
+      zoomSnap: .25
+    });
+
+    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
+      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
+      detectRetina: true
+    }).addTo(map);
+
+    return map;
+  },
+
+  mountPlugin(_map, _data, _options) {
+    return new L.TrueSize(_data, _options).addTo(_map);
+  },
+
+  addButtonHandler(_container, _map, _plugin) {
+    const removeBtn = _container.querySelector('.remove');
+    removeBtn.addEventListener('click', () => _map.removeLayer(_plugin));
+  },
+}
+
+
+Playground.init('#map1', [polygon, linestring, multiPolygon], options);
