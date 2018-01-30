@@ -59,10 +59,11 @@ L.TrueSize = L.Layer.extend({
 
   _onDrag(evt, layer) {
     const newPoint = L.point(evt.originalEvent.clientX, evt.originalEvent.clientY);
-    const latlng = this._map.layerPointToLatLng(newPoint);
-    const newCenter = [latlng.lng, latlng.lat];
+    const latlng = this._map.containerPointToLatLng(newPoint);
 
+    const newCenter = [latlng.lng, latlng.lat];
     const prevBearingDistance = this._getBearingDistance(layer);
+
     this._redraw(layer, newCenter, prevBearingDistance);
   },
 
@@ -94,17 +95,6 @@ L.TrueSize = L.Layer.extend({
     this._geoJSONLayer.clearLayers();
     this._geoJSONLayer.addData(newFeature);
     this._makeDraggable(this._geoJSONLayer._layers);
-  },
-
-  getEvents() {
-    return {
-      zoom: this.update,
-      viewreset: this.update
-    }
-  },
-
-  update(map) {
-    return this;
   },
 
   onRemove(map) {
