@@ -4,6 +4,8 @@ import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import turfDestination from '@turf/destination';
 import { coordAll as turfCoordAll } from '@turf/meta';
+import turfUnion from '@turf/union';
+import turf from '@turf/helpers';
 
 let id = 0;
 
@@ -17,23 +19,20 @@ L.TrueSize = L.Layer.extend({
     }
   },
   options: {
-    style: {
-      color: '#886699',
-      weight: 1,
-      opacity: 1,
-      dashArray: "5, 10"
-    }
+    color: '#886699',
+    weight: 1,
+    opacity: 1,
+    markerDiv: '',
+    markerClass: ''
   },
 
-  initialize(geoJSON = this.geoJSON, options) {
-    const optionsStyle = options ? options.style : {};
-    const style = Object.assign(this.options.style, optionsStyle);
-    const _options = {};
-    _options.style = style;
-    L.Util.setOptions(this, _options);
-
+  initialize(geoJSON = this.geoJSON, options = {}) {
+    // merge default and passed options
+    this._options = L.Util.extend(this.options, options);
     this._geometryType = geoJSON.geometry.type;
-    this._initGeoJson(geoJSON, _options);
+
+    L.Util.setOptions(this, this._options);
+    this._initGeoJson(geoJSON, this._options);
   },
 
   _initGeoJson(geoJSON, options) {
@@ -45,17 +44,27 @@ L.TrueSize = L.Layer.extend({
   onAdd(map) {
     this._map = map;
     this._geoJSONLayer.addTo(this._map);
-    this._makeDraggable(this._geoJSONLayer._layers);
+
+    // our currentlayer is always the first layer of geoJson layersgroup
+    // but has a dynamic key
+    const currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+    this._makeDraggable(currentLayer);
+
+    this._options.markerDiv.length && this._addMarker(currentLayer, this._options);
   },
 
-  _makeDraggable(layersObj) {
-    // use the first object(with dynmaic key) in the layersObj
-    // because we initialize for every feature its own leaflet-geoJSON layer
-    const currentLayer = layersObj[Object.keys(layersObj)[0]];
+  _addMarker(layer, options) {
+    const { markerClass, markerDiv } = options;
+    const dragIcon = L.divIcon({ className: markerClass, html: markerDiv });
+    this._dragMarker = L.marker(layer.getCenter(), { icon: dragIcon, draggable: true })
+      .on('drag', evt => this._onDrag(evt, layer))
+      .addTo(this._map);
+  },
 
-    const draggable = new L.Draggable(currentLayer._path);
+  _makeDraggable(layer) {
+    const draggable = new L.Draggable(layer._path);
     draggable
-      .on('drag', evt => this._onDrag(evt, currentLayer))
+      .on('drag', evt => this._onDrag(evt, layer))
       .enable();
   },
 
@@ -69,9 +78,8 @@ L.TrueSize = L.Layer.extend({
   },
 
   _getBearingDistance(layer) {
-    // use turfcenter function instead of layer getcenter, because
-    // layer will be added to map later
     const center = turfCenter(layer.feature).geometry.coordinates;
+
     return turfCoordAll(layer.feature).map(coord => {
       const bearing = turfBearing(center, coord);
       const distance = turfDistance(center, coord, { units: 'kilometers' });
@@ -95,7 +103,14 @@ L.TrueSize = L.Layer.extend({
 
     this._geoJSONLayer.clearLayers();
     this._geoJSONLayer.addData(newFeature);
-    this._makeDraggable(this._geoJSONLayer._layers);
+    // our currentlayer is always the first layer of geoJson layersgroup
+    // but has a dynamic key
+    const currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+
+    // add draggable hook again, as we using internal a new layer
+    // center marker if existing
+    this._makeDraggable(currentLayer);
+    this._dragMarker && this._dragMarker.setLatLng(currentLayer.getCenter());
   },
 
   onRemove(map) {

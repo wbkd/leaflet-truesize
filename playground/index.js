@@ -430,13 +430,13 @@ const multiPolygon = {
 };
 
 const options = {
-  style: {
-    stroke: true,
-    weight: 2,
-    color: '#FF00FF',
-    lineJoin: 'round',
-    opacity: 1
-  }
+  stroke: true,
+  weight: 2,
+  color: '#FF00FF',
+  lineJoin: 'round',
+  opacity: 1,
+  markerDiv: '<div></div>',
+  markerClass: 'drag-icon'
 };
 
 const Playground = {
