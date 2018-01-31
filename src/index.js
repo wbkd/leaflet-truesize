@@ -45,7 +45,7 @@ L.TrueSize = L.Layer.extend({
 
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    const currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+    const currentLayer = this._geoJSONLayer.getLayers()[0];
     const centerCoords = currentLayer.getCenter();
     const center = [centerCoords.lng, centerCoords.lat];
 
@@ -80,10 +80,7 @@ L.TrueSize = L.Layer.extend({
   },
 
   _onDrag(evt) {
-    const { clientX, clientY } = evt.originalEvent;
-    const pointerPos = L.point(clientX, clientY);
-    const { lng, lat } = this._map.containerPointToLatLng(pointerPos);
-
+    const { lng, lat } = this._map.mouseEventToLatLng(evt.originalEvent);
     this._redraw([lng, lat]);
   },
 
