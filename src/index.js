@@ -110,7 +110,7 @@ L.TrueSize = L.Layer.extend({
     this._geoJSONLayer.addData(newFeature);
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    const currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+    const currentLayer = this._geoJSONLayer.getLayers()[0];
 
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
