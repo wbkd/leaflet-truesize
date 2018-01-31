@@ -250,180 +250,6 @@ function validateId(id) {
 
 // Deprecated methods
 
-function coordEach(geojson, callback, excludeWrapCoord) {
-    // Handles null Geometry -- Skips this GeoJSON
-    if (geojson === null) return;
-    var j, k, l, geometry$$1, stopG, coords,
-        geometryMaybeCollection,
-        wrapShrink = 0,
-        coordIndex = 0,
-        isGeometryCollection,
-        type = geojson.type,
-        isFeatureCollection = type === 'FeatureCollection',
-        isFeature = type === 'Feature',
-        stop = isFeatureCollection ? geojson.features.length : 1;
-
-    // This logic may look a little weird. The reason why it is that way
-    // is because it's trying to be fast. GeoJSON supports multiple kinds
-    // of objects at its root: FeatureCollection, Features, Geometries.
-    // This function has the responsibility of handling all of them, and that
-    // means that some of the `for` loops you see below actually just don't apply
-    // to certain inputs. For instance, if you give this just a
-    // Point geometry, then both loops are short-circuited and all we do
-    // is gradually rename the input until it's called 'geometry'.
-    //
-    // This also aims to allocate as few resources as possible: just a
-    // few numbers and booleans, rather than any temporary arrays as would
-    // be required with the normalization approach.
-    for (var featureIndex = 0; featureIndex < stop; featureIndex++) {
-        geometryMaybeCollection = (isFeatureCollection ? geojson.features[featureIndex].geometry :
-            (isFeature ? geojson.geometry : geojson));
-        isGeometryCollection = (geometryMaybeCollection) ? geometryMaybeCollection.type === 'GeometryCollection' : false;
-        stopG = isGeometryCollection ? geometryMaybeCollection.geometries.length : 1;
-
-        for (var geomIndex = 0; geomIndex < stopG; geomIndex++) {
-            var multiFeatureIndex = 0;
-            var geometryIndex = 0;
-            geometry$$1 = isGeometryCollection ?
-                geometryMaybeCollection.geometries[geomIndex] : geometryMaybeCollection;
-
-            // Handles null Geometry -- Skips this geometry
-            if (geometry$$1 === null) continue;
-            coords = geometry$$1.coordinates;
-            var geomType = geometry$$1.type;
-
-            wrapShrink = (excludeWrapCoord && (geomType === 'Polygon' || geomType === 'MultiPolygon')) ? 1 : 0;
-
-            switch (geomType) {
-            case null:
-                break;
-            case 'Point':
-                if (callback(coords, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) === false) return false;
-                coordIndex++;
-                multiFeatureIndex++;
-                break;
-            case 'LineString':
-            case 'MultiPoint':
-                for (j = 0; j < coords.length; j++) {
-                    if (callback(coords[j], coordIndex, featureIndex, multiFeatureIndex, geometryIndex) === false) return false;
-                    coordIndex++;
-                    if (geomType === 'MultiPoint') multiFeatureIndex++;
-                }
-                if (geomType === 'LineString') multiFeatureIndex++;
-                break;
-            case 'Polygon':
-            case 'MultiLineString':
-                for (j = 0; j < coords.length; j++) {
-                    for (k = 0; k < coords[j].length - wrapShrink; k++) {
-                        if (callback(coords[j][k], coordIndex, featureIndex, multiFeatureIndex, geometryIndex) === false) return false;
-                        coordIndex++;
-                    }
-                    if (geomType === 'MultiLineString') multiFeatureIndex++;
-                    if (geomType === 'Polygon') geometryIndex++;
-                }
-                if (geomType === 'Polygon') multiFeatureIndex++;
-                break;
-            case 'MultiPolygon':
-                for (j = 0; j < coords.length; j++) {
-                    if (geomType === 'MultiPolygon') geometryIndex = 0;
-                    for (k = 0; k < coords[j].length; k++) {
-                        for (l = 0; l < coords[j][k].length - wrapShrink; l++) {
-                            if (callback(coords[j][k][l], coordIndex, featureIndex, multiFeatureIndex, geometryIndex) === false) return false;
-                            coordIndex++;
-                        }
-                        geometryIndex++;
-                    }
-                    multiFeatureIndex++;
-                }
-                break;
-            case 'GeometryCollection':
-                for (j = 0; j < geometry$$1.geometries.length; j++)
-                    if (coordEach(geometry$$1.geometries[j], callback, excludeWrapCoord) === false) return false;
-                break;
-            default:
-                throw new Error('Unknown Geometry Type');
-            }
-        }
-    }
-}
-
-/**
- * Callback for coordReduce
- *
- * The first time the callback function is called, the values provided as arguments depend
- * on whether the reduce method has an initialValue argument.
- *
- * If an initialValue is provided to the reduce method:
- *  - The previousValue argument is initialValue.
- *  - The currentValue argument is the value of the first element present in the array.
- *
- * If an initialValue is not provided:
- *  - The previousValue argument is the value of the first element present in the array.
- *  - The currentValue argument is the value of the second element present in the array.
- *
- * @callback coordReduceCallback
- * @param {*} previousValue The accumulated value previously returned in the last invocation
- * of the callback, or initialValue, if supplied.
- * @param {Array<number>} currentCoord The current coordinate being processed.
- * @param {number} coordIndex The current index of the coordinate being processed.
- * Starts at index 0, if an initialValue is provided, and at index 1 otherwise.
- * @param {number} featureIndex The current index of the Feature being processed.
- * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
- * @param {number} geometryIndex The current index of the Geometry being processed.
- */
-
-/**
- * Reduce coordinates in any GeoJSON object, similar to Array.reduce()
- *
- * @name coordReduce
- * @param {FeatureCollection|Geometry|Feature} geojson any GeoJSON object
- * @param {Function} callback a method that takes (previousValue, currentCoord, coordIndex)
- * @param {*} [initialValue] Value to use as the first argument to the first call of the callback.
- * @param {boolean} [excludeWrapCoord=false] whether or not to include the final coordinate of LinearRings that wraps the ring in its iteration.
- * @returns {*} The value that results from the reduction.
- * @example
- * var features = turf.featureCollection([
- *   turf.point([26, 37], {"foo": "bar"}),
- *   turf.point([36, 53], {"hello": "world"})
- * ]);
- *
- * turf.coordReduce(features, function (previousValue, currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
- *   //=previousValue
- *   //=currentCoord
- *   //=coordIndex
- *   //=featureIndex
- *   //=multiFeatureIndex
- *   //=geometryIndex
- *   return currentCoord;
- * });
- */
-
-function bbox(geojson) {
-    var BBox = [Infinity, Infinity, -Infinity, -Infinity];
-    coordEach(geojson, function (coord) {
-        if (BBox[0] > coord[0]) BBox[0] = coord[0];
-        if (BBox[1] > coord[1]) BBox[1] = coord[1];
-        if (BBox[2] < coord[0]) BBox[2] = coord[0];
-        if (BBox[3] < coord[1]) BBox[3] = coord[1];
-    });
-    return BBox;
-}
-
-function center(geojson, options) {
-    // Optional parameters
-    options = options || {};
-    if (!isObject(options)) throw new Error('options is invalid');
-    var properties = options.properties;
-
-    // Input validation
-    if (!geojson) throw new Error('geojson is required');
-
-    var ext = bbox(geojson);
-    var x = (ext[0] + ext[2]) / 2;
-    var y = (ext[1] + ext[3]) / 2;
-    return point([x, y], properties);
-}
-
 function getCoord(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -1027,7 +853,7 @@ function destination(origin, distance, bearing, options) {
 
 // Deprecated methods
 
-function coordEach$1(geojson, callback, excludeWrapCoord) {
+function coordEach(geojson, callback, excludeWrapCoord) {
     // Handles null Geometry -- Skips this GeoJSON
     if (geojson === null) return;
     var j, k, l, geometry, stopG, coords,
@@ -1115,7 +941,7 @@ function coordEach$1(geojson, callback, excludeWrapCoord) {
                 break;
             case 'GeometryCollection':
                 for (j = 0; j < geometry.geometries.length; j++)
-                    if (coordEach$1(geometry.geometries[j], callback, excludeWrapCoord) === false) return false;
+                    if (coordEach(geometry.geometries[j], callback, excludeWrapCoord) === false) return false;
                 break;
             default:
                 throw new Error('Unknown Geometry Type');
@@ -1339,9 +1165,9 @@ function coordEach$1(geojson, callback, excludeWrapCoord) {
  * var coords = turf.coordAll(features);
  * //= [[26, 37], [36, 53]]
  */
-function coordAll$1(geojson) {
+function coordAll(geojson) {
     var coords = [];
-    coordEach$1(geojson, function (coord) {
+    coordEach(geojson, function (coord) {
         coords.push(coord);
     });
     return coords;
@@ -1794,37 +1620,41 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     var currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+    var centerCoords = currentLayer.getCenter();
+    var center = [centerCoords.lng, centerCoords.lat];
+
+    this._initialBearingDistance = this._getBearingDistance(currentLayer, center);
 
     this._draggableLayer = this._createDraggable(currentLayer);
 
     if (this._options.markerDiv.length) {
-      this._dragMarker = this._createMarker(currentLayer, this._options);
+      this._dragMarker = this._createMarker(centerCoords, this._options);
       this._dragMarker.addTo(this._map);
     }
   },
-  _createMarker: function _createMarker(layer, options) {
+  _createMarker: function _createMarker(center, options) {
     var markerClass = options.markerClass,
         markerDiv = options.markerDiv;
 
     var dragIcon = L.divIcon({ className: markerClass, html: markerDiv });
-    var dragMarker = L.marker(layer.getCenter(), { icon: dragIcon, draggable: true });
+    var dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker, layer);
+    return this._addHooks(dragMarker);
   },
   _createDraggable: function _createDraggable(layer) {
     var draggable = new L.Draggable(layer._path);
     draggable.enable();
 
-    return this._addHooks(draggable, layer);
+    return this._addHooks(draggable);
   },
-  _addHooks: function _addHooks(item, layer) {
+  _addHooks: function _addHooks(item) {
     var _this = this;
 
     return item.on('drag', function (evt) {
-      return _this._onDrag(evt, layer);
+      return _this._onDrag(evt);
     });
   },
-  _onDrag: function _onDrag(evt, layer) {
+  _onDrag: function _onDrag(evt) {
     var _evt$originalEvent = evt.originalEvent,
         clientX = _evt$originalEvent.clientX,
         clientY = _evt$originalEvent.clientY;
@@ -1835,21 +1665,18 @@ L.TrueSize = L.Layer.extend({
         lng = _map$containerPointTo.lng,
         lat = _map$containerPointTo.lat;
 
-    var newCenter = [lng, lat];
-    var prevBearingDistance = this._getBearingDistance(layer);
-    this._redraw(layer, newCenter, prevBearingDistance);
+    this._redraw([lng, lat]);
   },
-  _getBearingDistance: function _getBearingDistance(layer) {
-    var prevCenter = center(layer.feature).geometry.coordinates;
-    return coordAll$1(layer.feature).map(function (coord) {
-      var bearing$$1 = bearing(prevCenter, coord);
-      var distance$$1 = distance(prevCenter, coord, { units: 'kilometers' });
+  _getBearingDistance: function _getBearingDistance(layer, center) {
+    return coordAll(layer.feature).map(function (coord) {
+      var bearing$$1 = bearing(center, coord);
+      var distance$$1 = distance(center, coord, { units: 'kilometers' });
       return { bearing: bearing$$1, distance: distance$$1 };
     });
   },
-  _redraw: function _redraw(layer, newCenter, bearingDistance) {
-    var newPoints = bearingDistance.map(function (params) {
-      return destination(newCenter, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+  _redraw: function _redraw(newPos) {
+    var newPoints = this._initialBearingDistance.map(function (params) {
+      return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
     });
 
     var newFeature = {

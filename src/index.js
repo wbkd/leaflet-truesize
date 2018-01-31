@@ -1,5 +1,4 @@
 import L from 'leaflet';
-import turfCenter from '@turf/center';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import turfDestination from '@turf/destination';
@@ -47,56 +46,58 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     const currentLayer = this._geoJSONLayer._layers[Object.keys(this._geoJSONLayer._layers)[0]];
+    const centerCoords = currentLayer.getCenter();
+    const center = [centerCoords.lng, centerCoords.lat];
+
+    this._initialBearingDistance = this._getBearingDistance(currentLayer, center);
 
     this._draggableLayer = this._createDraggable(currentLayer);
 
     if (this._options.markerDiv.length) {
-      this._dragMarker = this._createMarker(currentLayer, this._options);
+      this._dragMarker = this._createMarker(centerCoords, this._options);
       this._dragMarker.addTo(this._map);
     }
   },
 
-  _createMarker(layer, options) {
+  _createMarker(center, options) {
     const { markerClass, markerDiv } = options;
     const dragIcon = L.divIcon({ className: markerClass, html: markerDiv });
-    const dragMarker = L.marker(layer.getCenter(), { icon: dragIcon, draggable: true });
+    const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker, layer);
+    return this._addHooks(dragMarker);
   },
 
   _createDraggable(layer) {
     const draggable = new L.Draggable(layer._path);
     draggable.enable();
 
-    return this._addHooks(draggable, layer);
+    return this._addHooks(draggable);
   },
 
-  _addHooks(item, layer) {
-    return item.on('drag', evt => this._onDrag(evt, layer));
+  _addHooks(item) {
+    return item
+      .on('drag', (evt) => this._onDrag(evt))
   },
 
-  _onDrag(evt, layer) {
+  _onDrag(evt) {
     const { clientX, clientY } = evt.originalEvent;
     const pointerPos = L.point(clientX, clientY);
     const { lng, lat } = this._map.containerPointToLatLng(pointerPos);
 
-    const newCenter = [lng, lat];
-    const prevBearingDistance = this._getBearingDistance(layer);
-    this._redraw(layer, newCenter, prevBearingDistance);
+    this._redraw([lng, lat]);
   },
 
-  _getBearingDistance(layer) {
-    const prevCenter = turfCenter(layer.feature).geometry.coordinates;
+  _getBearingDistance(layer, center) {
     return turfCoordAll(layer.feature).map(coord => {
-      const bearing = turfBearing(prevCenter, coord);
-      const distance = turfDistance(prevCenter, coord, { units: 'kilometers' });
+      const bearing = turfBearing(center, coord);
+      const distance = turfDistance(center, coord, { units: 'kilometers' });
       return { bearing, distance };
     });
   },
 
-  _redraw(layer, newCenter, bearingDistance) {
-    const newPoints = bearingDistance.map(params => {
-      return turfDestination(newCenter, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+  _redraw(newPos) {
+    const newPoints = this._initialBearingDistance.map(params => {
+      return turfDestination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
     });
 
     const newFeature = {
