@@ -14,20 +14,23 @@
     <style>
       html, body {
         margin: 0;
-        padding: 0;
+        /* padding: */
       }
 
-      .map,
-      #map1 {
+      .content {
+        max-width: 960px;
+        margin: 100px auto;
+      }
+
+      #map {
         width: 800px;
         height: 500px;
-        margin: 100px;
       }
     </style>
   </head>
   <body>
-    <div id="map1">
-      <div class="map"></div>
+    <div class="content">
+      <div id="map"></div>
       <button class="remove">Remove</button>
     </div>
     <script src="index.js"></script>

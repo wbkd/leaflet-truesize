@@ -1589,11 +1589,21 @@ L.TrueSize = L.Layer.extend({
     }
   },
   options: {
-    color: '#886699',
+    color: '#FF0000',
+    stroke: true,
     weight: 1,
     opacity: 1,
-    markerDiv: '',
-    markerClass: ''
+    lineCap: 'round',
+    lineJoin: 'round',
+    dashArray: null,
+    dashOffset: null,
+    fill: true,
+    fillColor: '#FF0000',
+    fillOpacity: 0.3,
+    fillRule: 'evenodd',
+    className: null,
+    markerDiv: null,
+    markerClass: null
   },
 
   initialize: function initialize() {
@@ -1619,15 +1629,14 @@ L.TrueSize = L.Layer.extend({
 
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    var currentLayer = this._geoJSONLayer.getLayers()[0];
-    var centerCoords = currentLayer.getCenter();
+    this._currentLayer = this._geoJSONLayer.getLayers()[0];
+    var centerCoords = this._currentLayer.getCenter();
     var center = [centerCoords.lng, centerCoords.lat];
 
-    this._initialBearingDistance = this._getBearingDistance(currentLayer, center);
+    // wrap currentlayer into draggable layer
+    this._draggableLayer = this._createDraggable(this._currentLayer);
 
-    this._draggableLayer = this._createDraggable(currentLayer);
-
-    if (this._options.markerDiv.length) {
+    if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
       this._dragMarker.addTo(this._map);
     }
@@ -1650,9 +1659,15 @@ L.TrueSize = L.Layer.extend({
   _addHooks: function _addHooks(item) {
     var _this = this;
 
-    return item.on('drag', function (evt) {
-      return _this._onDrag(evt);
+    return item.on('dragstart', function (evt) {
+      return _this._onDragStart(evt, _this._currentLayer);
+    }).on('drag', function (evt) {
+      return _this._onDrag(evt, _this._currentLayer);
     });
+  },
+  _onDragStart: function _onDragStart(evt) {
+    var startPos = this._getLatLngFromEvent(evt);
+    this._initialBearingDistance = this._getBearingDistance(startPos);
   },
   _onDrag: function _onDrag(evt) {
     var _map$mouseEventToLatL = this._map.mouseEventToLatLng(evt.originalEvent),
@@ -1661,8 +1676,35 @@ L.TrueSize = L.Layer.extend({
 
     this._redraw([lng, lat]);
   },
-  _getBearingDistance: function _getBearingDistance(layer, center) {
-    return coordAll(layer.feature).map(function (coord) {
+  _getLatLngFromEvent: function _getLatLngFromEvent(evt) {
+    if (evt.sourceTarget._latlng) {
+      // marker
+      var _evt$sourceTarget$_la = evt.sourceTarget._latlng,
+          lng = _evt$sourceTarget$_la.lng,
+          lat = _evt$sourceTarget$_la.lat;
+
+      return [lng, lat];
+    } else {
+      // layer
+      var _map$_container = this._map._container,
+          offsetLeft = _map$_container.offsetLeft,
+          offsetTop = _map$_container.offsetTop;
+      var _evt$sourceTarget$_st = evt.sourceTarget._startPoint,
+          x = _evt$sourceTarget$_st.x,
+          y = _evt$sourceTarget$_st.y;
+
+      var pos = L.point(x - offsetLeft, y - offsetTop);
+
+      var _map$containerPointTo = this._map.containerPointToLatLng(pos),
+          _lng = _map$containerPointTo.lng,
+          _lat = _map$containerPointTo.lat;
+
+      return [_lng, _lat];
+    }
+    return [];
+  },
+  _getBearingDistance: function _getBearingDistance(center) {
+    return coordAll(this._currentLayer.feature).map(function (coord) {
       var bearing$$1 = bearing(center, coord);
       var distance$$1 = distance(center, coord, { units: 'kilometers' });
       return { bearing: bearing$$1, distance: distance$$1 };
@@ -1686,12 +1728,12 @@ L.TrueSize = L.Layer.extend({
     this._geoJSONLayer.addData(newFeature);
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    var currentLayer = this._geoJSONLayer.getLayers()[0];
+    this._currentLayer = this._geoJSONLayer.getLayers()[0];
 
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
-    this._draggableLayer = this._createDraggable(currentLayer);
-    this._dragMarker && this._dragMarker.setLatLng(currentLayer.getCenter());
+    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
   onRemove: function onRemove(map) {
     this._map = map;

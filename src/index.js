@@ -16,11 +16,21 @@ L.TrueSize = L.Layer.extend({
     }
   },
   options: {
-    color: '#886699',
+    color: '#FF0000',
+    stroke: true,
     weight: 1,
     opacity: 1,
-    markerDiv: '',
-    markerClass: ''
+    lineCap: 'round',
+    lineJoin: 'round',
+    dashArray: null,
+    dashOffset:	null,
+    fill:	true,
+    fillColor: '#FF0000',
+    fillOpacity:	0.3,
+    fillRule: 'evenodd',
+    className: null,
+    markerDiv: null,
+    markerClass: null,
   },
 
   initialize(geoJSON = this.geoJSON, options = {}) {
@@ -45,15 +55,14 @@ L.TrueSize = L.Layer.extend({
 
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    const currentLayer = this._geoJSONLayer.getLayers()[0];
-    const centerCoords = currentLayer.getCenter();
+    this._currentLayer = this._geoJSONLayer.getLayers()[0];
+    const centerCoords = this._currentLayer.getCenter();
     const center = [centerCoords.lng, centerCoords.lat];
 
-    this._initialBearingDistance = this._getBearingDistance(currentLayer, center);
+    // wrap currentlayer into draggable layer
+    this._draggableLayer = this._createDraggable(this._currentLayer);
 
-    this._draggableLayer = this._createDraggable(currentLayer);
-
-    if (this._options.markerDiv.length) {
+    if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
       this._dragMarker.addTo(this._map);
     }
@@ -76,7 +85,13 @@ L.TrueSize = L.Layer.extend({
 
   _addHooks(item) {
     return item
-      .on('drag', (evt) => this._onDrag(evt))
+      .on('dragstart', (evt) => this._onDragStart(evt, this._currentLayer))
+      .on('drag', (evt) => this._onDrag(evt, this._currentLayer))
+  },
+
+  _onDragStart(evt) {
+    const startPos = this._getLatLngFromEvent(evt);
+    this._initialBearingDistance = this._getBearingDistance(startPos);
   },
 
   _onDrag(evt) {
@@ -84,8 +99,24 @@ L.TrueSize = L.Layer.extend({
     this._redraw([lng, lat]);
   },
 
-  _getBearingDistance(layer, center) {
-    return turfCoordAll(layer.feature).map(coord => {
+  _getLatLngFromEvent(evt) {
+    if (evt.sourceTarget._latlng) {
+      // marker
+      const { lng, lat } = evt.sourceTarget._latlng;
+      return [lng, lat];
+    } else {
+      // layer
+      const { offsetLeft, offsetTop } = this._map._container;
+      const { x ,y } = evt.sourceTarget._startPoint;
+      const pos = L.point(x - offsetLeft, y - offsetTop);
+      const { lng, lat } = this._map.containerPointToLatLng(pos);
+      return [lng, lat];
+    }
+    return [];
+  },
+
+  _getBearingDistance(center) {
+    return turfCoordAll(this._currentLayer.feature).map(coord => {
       const bearing = turfBearing(center, coord);
       const distance = turfDistance(center, coord, { units: 'kilometers' });
       return { bearing, distance };
@@ -110,12 +141,12 @@ L.TrueSize = L.Layer.extend({
     this._geoJSONLayer.addData(newFeature);
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
-    const currentLayer = this._geoJSONLayer.getLayers()[0];
+    this._currentLayer = this._geoJSONLayer.getLayers()[0];
 
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
-    this._draggableLayer = this._createDraggable(currentLayer);
-    this._dragMarker && this._dragMarker.setLatLng(currentLayer.getCenter());
+    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
 
   onRemove(map) {

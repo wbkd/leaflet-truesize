@@ -171,11 +171,10 @@ const linestring = {
 const options = {
   stroke: true,
   weight: 2,
-  color: '#FF00FF',
   lineJoin: 'round',
   opacity: 1,
   markerDiv: '<div></div>',
-  markerClass: 'drag-icon'
+  markerClass: 'drag-icon',
 };
 
 const Playground = {
@@ -184,13 +183,11 @@ const Playground = {
 
     this._map = this.mountMap(this._container);
     this._plugins = _data.map(entry => this.mountPlugin(this._map, entry, _options));
-    this._plugins.map(plugin => this.addButtonHandler(this._container, this._map, plugin));
+    this._plugins.map(plugin => this.addButtonHandler(this._map, plugin));
   },
 
   mountMap(_container) {
-    const mapNode = _container.querySelector('.map');
-
-    const map = L.map(mapNode, {
+    const map = L.map(_container, {
       center: [40, 60],
       zoom: 3,
       zoomControl: false,
@@ -210,11 +207,11 @@ const Playground = {
     return new L.TrueSize(_data, _options).addTo(_map);
   },
 
-  addButtonHandler(_container, _map, _plugin) {
-    const removeBtn = _container.querySelector('.remove');
+  addButtonHandler(_map, _plugin) {
+    const removeBtn = document.querySelector('.remove');
     removeBtn.addEventListener('click', () => _map.removeLayer(_plugin));
   },
 }
 
 
-Playground.init('#map1', [polygon, linestring], options);
+Playground.init('#map', [polygon, linestring], options);
