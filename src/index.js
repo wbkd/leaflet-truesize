@@ -31,6 +31,7 @@ L.TrueSize = L.Layer.extend({
     className: null,
     markerDiv: null,
     markerClass: null,
+    iconAnchor: []
   },
 
   initialize(geoJSON = this.geoJSON, options = {}) {
@@ -69,8 +70,8 @@ L.TrueSize = L.Layer.extend({
   },
 
   _createMarker(center, options) {
-    const { markerClass, markerDiv } = options;
-    const dragIcon = L.divIcon({ className: markerClass, html: markerDiv });
+    const { markerClass, markerDiv, iconAnchor } = options;
+    const dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor });
     const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
     return this._addHooks(dragMarker);
@@ -100,15 +101,15 @@ L.TrueSize = L.Layer.extend({
   },
 
   _getLatLngFromEvent(evt) {
-    if (evt.sourceTarget._latlng) {
+    if (evt.target._latlng) {
       // marker
-      const { lng, lat } = evt.sourceTarget._latlng;
+      const { lng, lat } = evt.target._latlng;
       return [lng, lat];
     } else {
       // layer
-      const { offsetLeft, offsetTop } = this._map._container;
-      const { x ,y } = evt.sourceTarget._startPoint;
-      const pos = L.point(x - offsetLeft, y - offsetTop);
+      const { left, top } = this._map._container.getClientRects()[0];
+      const { x ,y } = evt.target._startPoint;
+      const pos = L.point(x - left, y - top);
       const { lng, lat } = this._map.containerPointToLatLng(pos);
       return [lng, lat];
     }

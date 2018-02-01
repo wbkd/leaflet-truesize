@@ -1603,7 +1603,8 @@ L.TrueSize = L.Layer.extend({
     fillRule: 'evenodd',
     className: null,
     markerDiv: null,
-    markerClass: null
+    markerClass: null,
+    iconAnchor: []
   },
 
   initialize: function initialize() {
@@ -1643,9 +1644,10 @@ L.TrueSize = L.Layer.extend({
   },
   _createMarker: function _createMarker(center, options) {
     var markerClass = options.markerClass,
-        markerDiv = options.markerDiv;
+        markerDiv = options.markerDiv,
+        iconAnchor = options.iconAnchor;
 
-    var dragIcon = L.divIcon({ className: markerClass, html: markerDiv });
+    var dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
     var dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
     return this._addHooks(dragMarker);
@@ -1677,23 +1679,24 @@ L.TrueSize = L.Layer.extend({
     this._redraw([lng, lat]);
   },
   _getLatLngFromEvent: function _getLatLngFromEvent(evt) {
-    if (evt.sourceTarget._latlng) {
+    if (evt.target._latlng) {
       // marker
-      var _evt$sourceTarget$_la = evt.sourceTarget._latlng,
-          lng = _evt$sourceTarget$_la.lng,
-          lat = _evt$sourceTarget$_la.lat;
+      var _evt$target$_latlng = evt.target._latlng,
+          lng = _evt$target$_latlng.lng,
+          lat = _evt$target$_latlng.lat;
 
       return [lng, lat];
     } else {
       // layer
-      var _map$_container = this._map._container,
-          offsetLeft = _map$_container.offsetLeft,
-          offsetTop = _map$_container.offsetTop;
-      var _evt$sourceTarget$_st = evt.sourceTarget._startPoint,
-          x = _evt$sourceTarget$_st.x,
-          y = _evt$sourceTarget$_st.y;
+      var _map$_container$getCl = this._map._container.getClientRects()[0],
+          left = _map$_container$getCl.left,
+          top = _map$_container$getCl.top;
 
-      var pos = L.point(x - offsetLeft, y - offsetTop);
+      var _evt$target$_startPoi = evt.target._startPoint,
+          x = _evt$target$_startPoi.x,
+          y = _evt$target$_startPoi.y;
+
+      var pos = L.point(x - left, y - top);
 
       var _map$containerPointTo = this._map.containerPointToLatLng(pos),
           _lng = _map$containerPointTo.lng,
