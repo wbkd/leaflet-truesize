@@ -211,6 +211,8 @@
   </style>
 </head>
 <body>
+    <a href="https://github.com/wbkd/leaflet-truesize" class="github-corner" aria-label="View source on Github">
+      <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#64A7D9; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
   <div id="docs">
 
     <div class="centered">
@@ -237,6 +239,16 @@
       </div>
     </div>
 
+    <div class="centered">
+        <p>Or download the minified library from <a href="https://unpkg.com/leaflet-truesize/build/Leaflet.TrueSize.min.js">unpkg</a> or <a href="https://cdn.jsdelivr.net/npm/leaflet-truesize">jsDelivr</a>.</p>
+    </div>
+
+    <div class="bg">
+        <div class="centered">
+          <pre><code class="html">&lt;script src="https://unpkg.com/leaflet-truesize"&gt;&lt;/script&gt;</code></pre>
+        </div>
+    </div>
+
     <div class="centered" id="usage">
       <h3 class="sectiontitle">Usage Example</h3>
     </div>
@@ -248,39 +260,25 @@ import 'leaflet-truesize';
 
 // create leaflet map ...
 
-const data = {
-  "type": "Feature",
-  "properties": {},
-  "geometry": {
-    "type": "Polygon",
-    "coordinates": [
-      [
-        [
-          14.765625,
-          50.98609893339354
-        ],
-        [
-          19.0283203125,
-          49.15296965617042
-        ],
-        [
-          24.1259765625,
-          50.28933925329178
-        ],
-        [
-          21.3134765625,
-          54.87660665410869
-        ]
-      ]
-    ]
+const geojsonFeature = {
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'Polygon',
+    coordinates: [[
+      [14.7656, 50.9860],
+      [19.0283, 49.1529],
+      [24.1259, 50.2893],
+      [21.3134, 54.8766]
+    ]]
   }
 };
 
-new L.trueSize(data,{
+const trueSizeLayer = new L.trueSize(geojsonFeature, {
   color: '#FF0000',
   weight: 1,
   opacity: 1,
-  dashArray: "7, 10",
+  dashArray: '7, 10',
 }).addTo(map);
         </code></pre>
       </div>
@@ -302,9 +300,9 @@ new L.trueSize(data,{
         <tbody>
           <tr>
             <td class="code">
-               L.trueSize(data, options)
+               L.trueSize(geojsonFeature, options)
             </td>
-            <td>You need to pass the first paramter <span class="code">data</span> in order to create a truesize object. It has to be a single geoJSON Feature (until now Polygon or LineString). The options paramter is not required.</td>
+            <td>You need to pass the first paramter <span class="code">data</span> in order to create a truesize layer. It has to be a single GeoJSON feature (Polygon or LineString). The options parameter is not required.</td>
           </tr>
         </tbody>
       </table>
@@ -330,7 +328,6 @@ new L.trueSize(data,{
         </thead>
         <tbody id="tbody-options"></tbody>
       </table>
-      <p><a href="http://leafletjs.com/reference-1.3.0.html#path" target="_blank">see leaflet docs</a></p>
 
     <footer>
       made by <a href="https://webkid.io">webkid.io</a>
@@ -349,13 +346,12 @@ new L.trueSize(data,{
     });
 
     let isEnabled = false;
-    // disableMap();
+    disableMap();
 
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.geoJSON()
 
     new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
+      attribution: `attribution: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
       detectRetina: true
     }).addTo(map);
 
@@ -363,18 +359,18 @@ new L.trueSize(data,{
     const india = {"type":"Feature","id":"IND","properties":{"name":"India"},"geometry":{"type":"Polygon","coordinates":[[[77.837451,35.49401],[78.912269,34.321936],[78.811086,33.506198],[79.208892,32.994395],[79.176129,32.48378],[78.458446,32.618164],[78.738894,31.515906],[79.721367,30.882715],[81.111256,30.183481],[80.476721,29.729865],[80.088425,28.79447],[81.057203,28.416095],[81.999987,27.925479],[83.304249,27.364506],[84.675018,27.234901],[85.251779,26.726198],[86.024393,26.630985],[87.227472,26.397898],[88.060238,26.414615],[88.174804,26.810405],[88.043133,27.445819],[88.120441,27.876542],[88.730326,28.086865],[88.814248,27.299316],[88.835643,27.098966],[89.744528,26.719403],[90.373275,26.875724],[91.217513,26.808648],[92.033484,26.83831],[92.103712,27.452614],[91.696657,27.771742],[92.503119,27.896876],[93.413348,28.640629],[94.56599,29.277438],[95.404802,29.031717],[96.117679,29.452802],[96.586591,28.83098],[96.248833,28.411031],[97.327114,28.261583],[97.402561,27.882536],[97.051989,27.699059],[97.133999,27.083774],[96.419366,27.264589],[95.124768,26.573572],[95.155153,26.001307],[94.603249,25.162495],[94.552658,24.675238],[94.106742,23.850741],[93.325188,24.078556],[93.286327,23.043658],[93.060294,22.703111],[93.166128,22.27846],[92.672721,22.041239],[92.146035,23.627499],[91.869928,23.624346],[91.706475,22.985264],[91.158963,23.503527],[91.46773,24.072639],[91.915093,24.130414],[92.376202,24.976693],[91.799596,25.147432],[90.872211,25.132601],[89.920693,25.26975],[89.832481,25.965082],[89.355094,26.014407],[88.563049,26.446526],[88.209789,25.768066],[88.931554,25.238692],[88.306373,24.866079],[88.084422,24.501657],[88.69994,24.233715],[88.52977,23.631142],[88.876312,22.879146],[89.031961,22.055708],[88.888766,21.690588],[88.208497,21.703172],[86.975704,21.495562],[87.033169,20.743308],[86.499351,20.151638],[85.060266,19.478579],[83.941006,18.30201],[83.189217,17.671221],[82.192792,17.016636],[82.191242,16.556664],[81.692719,16.310219],[80.791999,15.951972],[80.324896,15.899185],[80.025069,15.136415],[80.233274,13.835771],[80.286294,13.006261],[79.862547,12.056215],[79.857999,10.357275],[79.340512,10.308854],[78.885345,9.546136],[79.18972,9.216544],[78.277941,8.933047],[77.941165,8.252959],[77.539898,7.965535],[76.592979,8.899276],[76.130061,10.29963],[75.746467,11.308251],[75.396101,11.781245],[74.864816,12.741936],[74.616717,13.992583],[74.443859,14.617222],[73.534199,15.990652],[73.119909,17.92857],[72.820909,19.208234],[72.824475,20.419503],[72.630533,21.356009],[71.175273,20.757441],[70.470459,20.877331],[69.16413,22.089298],[69.644928,22.450775],[69.349597,22.84318],[68.176645,23.691965],[68.842599,24.359134],[71.04324,24.356524],[70.844699,25.215102],[70.282873,25.722229],[70.168927,26.491872],[69.514393,26.940966],[70.616496,27.989196],[71.777666,27.91318],[72.823752,28.961592],[73.450638,29.976413],[74.42138,30.979815],[74.405929,31.692639],[75.258642,32.271105],[74.451559,32.7649],[74.104294,33.441473],[73.749948,34.317699],[74.240203,34.748887],[75.757061,34.504923],[76.871722,34.653544],[77.837451,35.49401]]]}};
 
     new L.trueSize(mexico, {
-      color: '#FF0000',
-      fillColor: '#FF0000',
+      color: '#FFAB2E',
+      fillColor: '#FFAB2E',
       weight: 1,
       opacity: 1,
       dashArray: '7, 10',
       markerDiv: '<img src="arrow_move.svg" />',
-      iconAnchor: [16,16]
+      iconAnchor: [16, 16]
     }).addTo(map);
 
     new L.trueSize(india, {
-      color: '#00FF00',
-      fillColor: '#00FF00',
+      color: '#64A7D9',
+      fillColor: '#64A7D9',
       weight: 1,
       opacity: 1,
     }).addTo(map);
@@ -416,99 +412,99 @@ new L.trueSize(data,{
   </script>
 
   <script>
-  // create options table
-  const options = [{
-    option: 'color',
-    type: 'String',
-    default: '#FF0000',
-    description: 'Stroke color'
-  }, {
-    option: 'stroke',
-    type: 'Boolean',
-    default: true,
-    description: 'Stroke visibility'
-  }, {
-    option: 'weight',
-    type: 'Number',
-    default: 1,
-    description: 'Stroke width in pixels'
-  }, {
-    option: 'opacity',
-    type: 'Number',
-    default: 1,
-    description: 'Stroke opacity'
-  }, {
-    option: 'lineCap',
-    type: 'String',
-    default: 'round',
-    description: 'A string that defines shape to be used at the end of the stroke'
-  }, {
-    option: 'lineJoin',
-    type: 'String',
-    default: 'round',
-    description: 'A string that defines shape to be used at the corners of the stroke'
-  }, {
-    option: 'dashArray',
-    type: 'String',
-    default: null,
-    description: 'A string that defines the stroke dash pattern'
-  }, {
-    option: 'dashOffset',
-    type: 'String',
-    default: null,
-    description: 'A string that defines the distance into the dash pattern to start the dash'
-  }, {
-    option: 'fill',
-    type: 'Boolean',
-    default: true,
-    description: 'Fill visibility'
-  }, {
-    option: 'fillColor',
-    type: 'String',
-    default: '#FF0000',
-    description: 'Fill color'
-  }, {
-    option: 'fillOpacity',
-    type: 'Number',
-    default: 0.3,
-    description: 'Fill opacity'
-  }, {
-    option: 'fillRule',
-    type: 'String',
-    default: 'evenodd',
-    description: 'A string that defines how the inside of a shape is determined'
-  }, {
-    option: 'className',
-    type: 'String',
-    default: null,
-    description: 'Custom class name for the geojson feature'
-  }, {
-    option: 'markerDiv',
-    type: 'String',
-    default: null,
-    description: 'Custom html icon'
-  }, {
-    option: 'markerClass',
-    type: 'String',
-    default: null,
-    description: 'Custom html icon class'
-  }, {
-    option: 'iconAnchor',
-    type: 'Array',
-    default: '[]',
-    description: 'Point of the icon which will correspond to marker position'
-  }];
+    // create options table
+    const options = [{
+      option: 'color',
+      type: 'String',
+      default: '#FF0000',
+      description: 'Stroke color'
+    }, {
+      option: 'stroke',
+      type: 'Boolean',
+      default: true,
+      description: 'Stroke visibility'
+    }, {
+      option: 'weight',
+      type: 'Number',
+      default: 1,
+      description: 'Stroke width in pixels'
+    }, {
+      option: 'opacity',
+      type: 'Number',
+      default: 1,
+      description: 'Stroke opacity'
+    }, {
+      option: 'lineCap',
+      type: 'String',
+      default: 'round',
+      description: 'A string that defines shape to be used at the end of the stroke'
+    }, {
+      option: 'lineJoin',
+      type: 'String',
+      default: 'round',
+      description: 'A string that defines shape to be used at the corners of the stroke'
+    }, {
+      option: 'dashArray',
+      type: 'String',
+      default: null,
+      description: 'A string that defines the stroke dash pattern'
+    }, {
+      option: 'dashOffset',
+      type: 'String',
+      default: null,
+      description: 'A string that defines the distance into the dash pattern to start the dash'
+    }, {
+      option: 'fill',
+      type: 'Boolean',
+      default: true,
+      description: 'Fill visibility'
+    }, {
+      option: 'fillColor',
+      type: 'String',
+      default: '#FF0000',
+      description: 'Fill color'
+    }, {
+      option: 'fillOpacity',
+      type: 'Number',
+      default: 0.3,
+      description: 'Fill opacity'
+    }, {
+      option: 'fillRule',
+      type: 'String',
+      default: 'evenodd',
+      description: 'A string that defines how the inside of a shape is determined'
+    }, {
+      option: 'className',
+      type: 'String',
+      default: null,
+      description: 'Custom class name for the geojson feature'
+    }, {
+      option: 'markerDiv',
+      type: 'String',
+      default: null,
+      description: 'Custom html icon'
+    }, {
+      option: 'markerClass',
+      type: 'String',
+      default: null,
+      description: 'Custom html icon class'
+    }, {
+      option: 'iconAnchor',
+      type: 'Array',
+      default: '[]',
+      description: 'Point of the icon which will correspond to marker position'
+    }];
 
-  const tbody = document.querySelector('#tbody-options');
+    const tbody = document.querySelector('#tbody-options');
 
-  const trs = options.map(o => (`<tr>
-    <td class="code">${o.option}</td>
-    <td class="code">${o.type}</td>
-    <td class="code">${o.default}</td>
-    <td>${o.description}</td>
-  </tr>`)).join('');
+    const trs = options.map(o => (`<tr>
+      <td class="code">${o.option}</td>
+      <td class="code">${o.type}</td>
+      <td class="code">${o.default}</td>
+      <td>${o.description}</td>
+    </tr>`)).join('');
 
-  tbody.innerHTML = trs;
+    tbody.innerHTML = trs;
   </script>
 </body>
 </html>
