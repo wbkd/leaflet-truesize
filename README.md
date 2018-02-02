@@ -34,3 +34,5 @@ const trueSizeLayer = new L.trueSize(geojsonFeature, {
   dashArray: '7, 10',
 }).addTo(map);
 ```
+
+Inspiration: ["The True Size Of ..."](https://thetruesize.com/)
