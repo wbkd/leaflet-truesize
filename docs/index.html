@@ -338,7 +338,7 @@ const trueSizeLayer = new L.trueSize(geojsonFeature, {
 
   <script>
     const map = L.map('map', {
-      center: [40, 13.4],
+      center: [20, 0],
       zoom: 2,
       zoomControl: false,
       zoomDelta: .25,
@@ -414,6 +414,26 @@ const trueSizeLayer = new L.trueSize(geojsonFeature, {
   <script>
     // create options table
     const options = [{
+      option: 'className',
+      type: 'String',
+      default: null,
+      description: 'Custom class name for the geojson feature'
+    }, {
+      option: 'markerDiv',
+      type: 'String',
+      default: null,
+      description: 'Custom html icon'
+    }, {
+      option: 'markerClass',
+      type: 'String',
+      default: null,
+      description: 'Custom html icon class'
+    }, {
+      option: 'iconAnchor',
+      type: 'Array',
+      default: '[]',
+      description: 'Point of the icon which will correspond to marker position'
+    },{
       option: 'color',
       type: 'String',
       default: '#FF0000',
@@ -473,26 +493,6 @@ const trueSizeLayer = new L.trueSize(geojsonFeature, {
       type: 'String',
       default: 'evenodd',
       description: 'A string that defines how the inside of a shape is determined'
-    }, {
-      option: 'className',
-      type: 'String',
-      default: null,
-      description: 'Custom class name for the geojson feature'
-    }, {
-      option: 'markerDiv',
-      type: 'String',
-      default: null,
-      description: 'Custom html icon'
-    }, {
-      option: 'markerClass',
-      type: 'String',
-      default: null,
-      description: 'Custom html icon class'
-    }, {
-      option: 'iconAnchor',
-      type: 'Array',
-      default: '[]',
-      description: 'Point of the icon which will correspond to marker position'
     }];
 
     const tbody = document.querySelector('#tbody-options');
