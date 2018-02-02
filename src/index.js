@@ -36,8 +36,7 @@ L.TrueSize = L.Layer.extend({
 
   initialize(geoJSON = this.geoJSON, options = {}) {
     // merge default and passed options
-    this._options = L.Util.extend(this.options, options);
-
+    this._options = Object.assign({}, this.options, options);
     this._geometryType = geoJSON.geometry.type;
 
     L.Util.setOptions(this, this._options);

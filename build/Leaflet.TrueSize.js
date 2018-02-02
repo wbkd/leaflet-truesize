@@ -1,4 +1,3 @@
-(function(l, i, v, e) { v = l.createElement(i); v.async = 1; v.src = '//' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; e = l.getElementsByTagName(i)[0]; e.parentNode.insertBefore(v, e)})(document, 'script');
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
 	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
@@ -1722,8 +1721,7 @@ L.TrueSize = L.Layer.extend({
     var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     // merge default and passed options
-    this._options = L.Util.extend(this.options, options);
-
+    this._options = Object.assign({}, this.options, options);
     this._geometryType = geoJSON.geometry.type;
 
     L.Util.setOptions(this, this._options);
