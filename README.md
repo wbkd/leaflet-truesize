@@ -3,6 +3,7 @@
 Plugin for creating projection aware draggable polygons and polylines.
 You can find the docs on the plugin [website](https://wbkd.github.io/leaflet-truesize/).
 
+![](https://raw.githubusercontent.com/wbkd/leaflet-truesize/master/docs/leaflet-truesize-screenshot.jpg?token=ACuaP0ep7xoLCjUOEqUqRcoSzcWnKNY5ks5afX3ZwA%3D%3D)
 
 ## Installation
 
