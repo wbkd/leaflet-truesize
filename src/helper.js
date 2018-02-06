@@ -1,4 +1,4 @@
-// custom destination function, cloned from https://github.com/Turfjs/turf
+/*! TurfJS v 5.1.5 | Copyright (c) 2018 TurfJS | https://github.com/Turfjs/turf/blob/master/LICENSE */
 import { getCoord } from '@turf/invariant';
 import { isObject, lengthToRadians, point } from '@turf/helpers';
 

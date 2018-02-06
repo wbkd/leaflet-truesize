@@ -2194,7 +2194,7 @@ function getCoord$2(coord) {
  * //="Point"
  */
 
-// custom destination function, cloned from https://github.com/Turfjs/turf
+/*! TurfJS v 5.1.5 | Copyright (c) 2018 TurfJS | https://github.com/Turfjs/turf/blob/master/LICENSE */
 //http://en.wikipedia.org/wiki/Haversine_formula
 //http://www.movable-type.co.uk/scripts/latlong.html
 /**
