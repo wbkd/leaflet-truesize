@@ -1,8 +1,8 @@
 import L from 'leaflet';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
-import turfDestination from '@turf/destination';
 import { coordAll as turfCoordAll } from '@turf/meta';
+import { destination } from './helper';
 
 let id = 0;
 
@@ -125,7 +125,7 @@ L.TrueSize = L.Layer.extend({
 
   _redraw(newPos) {
     const newPoints = this._initialBearingDistance.map(params => {
-      return turfDestination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+      return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
     });
 
     const newFeature = {
