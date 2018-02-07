@@ -193,7 +193,7 @@ const Playground = {
       zoom: 3,
       zoomControl: false,
       zoomDelta: .25,
-      zoomSnap: .25
+      zoomSnap: .25,
     });
 
     new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
