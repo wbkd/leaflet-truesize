@@ -1,7 +1,7 @@
 {
   "name": "leaflet-truesize",
   "version": "1.1.1",
-  "description": "Leaflet plugin for creating projection aware draggable polygons and polylines.",
+  "description": "Leaflet plugin for easily comparing sizes of geographical shapes.",
   "repository": {
     "type": "git",
     "url": "https://github.com/wbkd/leaflet-truesize.git"
