@@ -2,7 +2,7 @@ import L from 'leaflet';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import { coordAll as turfCoordAll } from '@turf/meta';
-import { destination } from './helper';
+import { destination, isTouch } from './helper';
 
 let id = 0;
 
@@ -95,7 +95,9 @@ L.TrueSize = L.Layer.extend({
   },
 
   _onDrag(evt) {
-    const { lng, lat } = this._map.mouseEventToLatLng(evt.originalEvent);
+    const event = isTouch ? evt.originalEvent.touches[0] : evt.originalEvent;
+    const { lng, lat } = this._map.mouseEventToLatLng(event);
+
     this._redraw([lng, lat]);
   },
 

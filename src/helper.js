@@ -56,6 +56,14 @@ export function destination(origin, distance, bearing, options) {
   return point([lng, lat], properties);
 }
 
+export function isUndefined(obj) {
+  return typeof obj === 'undefined';
+}
+
+export const isTouch = !isUndefined(window.orientation);
+
 export default {
-  destination
+  destination,
+  isTouch,
+  isUndefined
 }
