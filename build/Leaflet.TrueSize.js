@@ -2125,7 +2125,9 @@ function destination(origin, distance, bearing, options) {
   return point([lng, lat], properties);
 }
 
-
+function isUndefined(obj) {
+  return typeof obj === 'undefined';
+}
 
 var isIos = L.Browser.touch && L.Browser.mobileWebkit;
 
@@ -2186,7 +2188,7 @@ L$1.TrueSize = L$1.Layer.extend({
     var center = [centerCoords.lng, centerCoords.lat];
 
     // wrap currentlayer into draggable layer
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
 
     if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
@@ -2211,6 +2213,7 @@ L$1.TrueSize = L$1.Layer.extend({
         lng = _evt$target$_latlng.lng,
         lat = _evt$target$_latlng.lat;
 
+
     this._initialBearingDistance = this._getBearingDistance([lng, lat]);
   },
   _onMarkerDrag: function _onMarkerDrag(evt) {
@@ -2220,41 +2223,53 @@ L$1.TrueSize = L$1.Layer.extend({
     var draggablePath = new L$1.Draggable(layer._path);
     draggablePath.enable();
 
-    return this._addGeometryHooks(draggablePath);
+    return this._addPathHooks(draggablePath);
   },
-  _addGeometryHooks: function _addGeometryHooks(item) {
-    var START = isIos ? 'touchstart' : 'touchstart mousedown';
-    var MOVE = isIos ? 'touchmove' : 'touchmove';
+  _addPathHooks: function _addPathHooks(item) {
+    // for ios we use the native events instead of leaflet events
+    // because it´s not working correctly with the dragstart and drag evt
+    if (isIos) {
+      L$1.DomEvent.on(item._dragStartTarget, 'touchstart', this._onDragStart, this);
+      L$1.DomEvent.on(item._dragStartTarget, 'touchmove', this._onDrag, this);
 
-    L$1.DomEvent.on(item._dragStartTarget, START, this._onDragStart, this);
-    L$1.DomEvent.on(item._dragStartTarget, MOVE, this._onDrag, this);
+      return item;
+    }
 
-    return item;
+    return item.on('dragstart', this._onDragStart, this).on('drag', this._onDrag, this);
   },
   _onDragStart: function _onDragStart(evt) {
-    var event = evt.touches ? evt.touches[0] : evt;
-    var startPos = this._getLatLngFromEvent(event);
+    var event = evt.touches ? evt.touches[0] : evt.target;
+    var pos = this._getPositionFromEvent(event);
+    var coords = this._getLatLngFromPosition(pos);
 
-    this._initialBearingDistance = this._getBearingDistance(startPos);
+    this._initialBearingDistance = this._getBearingDistance(coords);
   },
   _onDrag: function _onDrag(evt) {
-    var event = evt.touches ? evt.touches[0] : evt;
-    var newPos = this._getLatLngFromEvent(event);
+    var event = evt.touches ? evt.touches[0] : evt.originalEvent;
+    var pos = this._getPositionFromEvent(event);
+    var coords = this._getLatLngFromPosition(pos);
 
-    this._redraw(newPos);
+    this._redraw(coords);
   },
-  _getLatLngFromEvent: function _getLatLngFromEvent(evt) {
+  _getPositionFromEvent: function _getPositionFromEvent(evt) {
+    if (!isUndefined(evt._startPoint)) {
+      return evt._startPoint;
+    }
+
+    return { x: evt.clientX, y: evt.clientY };
+  },
+  _getLatLngFromPosition: function _getLatLngFromPosition(pos) {
     var _map$_container$getCl = this._map._container.getClientRects()[0],
         left = _map$_container$getCl.left,
         top = _map$_container$getCl.top;
 
-    var x = evt.clientX,
-        y = evt.clientY;
+    var x = pos.x,
+        y = pos.y;
 
 
-    var pos = L$1.point(x - left, y - top);
+    var posWithOffset = L$1.point(x - left, y - top);
 
-    var _map$containerPointTo = this._map.containerPointToLatLng(pos),
+    var _map$containerPointTo = this._map.containerPointToLatLng(posWithOffset),
         lng = _map$containerPointTo.lng,
         lat = _map$containerPointTo.lat;
 
@@ -2288,7 +2303,7 @@ L$1.TrueSize = L$1.Layer.extend({
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
     this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
   onRemove: function onRemove(map) {
