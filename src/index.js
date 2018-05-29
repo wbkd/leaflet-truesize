@@ -74,79 +74,62 @@ L.TrueSize = L.Layer.extend({
     const dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor });
     const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker);
+    return this._addMarkerHooks(dragMarker);
+  },
+
+  _addMarkerHooks(marker) {
+    return marker
+      .on('dragstart', this._onMarkerDragStart, this)
+      .on('drag', this._onMarkerDrag, this)
+  },
+
+  _onMarkerDragStart(evt) {
+    const { lng, lat } = evt.target._latlng;
+    this._initialBearingDistance = this._getBearingDistance([lng, lat]);
+  },
+
+  _onMarkerDrag(evt) {
+    this._redraw([evt.latlng.lng, evt.latlng.lat]);
   },
 
   _createDraggable(layer) {
-    const draggable = new L.Draggable(layer._path);
-    draggable.enable();
+    const draggablePath = new L.Draggable(layer._path);
+    draggablePath.enable();
 
-    if (isIos) {
-      return this._addTouchHooks(draggable);
-    }
-    return this._addHooks(draggable);
+    return this._addGeometryHooks(draggablePath);
   },
 
-  _addHooks(item) {
-    return item
-      .on('dragstart', (evt) => this._onDragStart(evt, this._currentLayer))
-      .on('drag', (evt) => this._onDrag(evt, this._currentLayer))
-  },
-
-  _addTouchHooks(item) {
-    const START = 'touchstart';
-    const MOVE = 'touchmove';
+  _addGeometryHooks(item) {
+    const START = isIos ? 'touchstart' : 'touchstart mousedown';
+    const MOVE = isIos ? 'touchmove' : 'touchmove';
 
     L.DomEvent.on(item._dragStartTarget, START, this._onDragStart, this);
     L.DomEvent.on(item._dragStartTarget, MOVE, this._onDrag, this);
-    return item
+
+    return item;
   },
 
   _onDragStart(evt) {
     const event =  evt.touches ? evt.touches[0] : evt;
-
     const startPos = this._getLatLngFromEvent(event);
+
     this._initialBearingDistance = this._getBearingDistance(startPos);
   },
 
   _onDrag(evt) {
-    if (evt.latlng) return this._redraw([evt.latlng.lng, evt.latlng.lat]);
+    const event =  evt.touches ? evt.touches[0] : evt;
+    const newPos = this._getLatLngFromEvent(event);
 
-    let event = evt.latlng && evt.latlng;
-    if (isIos) {
-      event = evt.touches[0];
-    } else {
-      event =  evt.originalEvent.touches ? evt.originalEvent.touches[0] : evt.originalEvent;
-    }
-
-    const { lng, lat } = this._map.mouseEventToLatLng(event);
-    this._redraw([lng, lat]);
+    this._redraw(newPos);
   },
 
   _getLatLngFromEvent(evt) {
-    if (evt.target._latlng) {
-      // marker
-      const { lng, lat } = evt.target._latlng;
-      return [lng, lat];
-    } else {
-      // layer
-      const { left, top } = this._map._container.getClientRects()[0];
-      let x = null;
-      let y = null;
-      if (isIos) {
-        x = evt.clientX;
-        y = evt.clientY;
-      } else {
-        x = evt.target._startPoint.x;
-        y = evt.target._startPoint.y;
+    const { left, top } = this._map._container.getClientRects()[0];
+    const { clientX: x , clientY: y } = evt;
 
-      }
-
-      const pos = L.point(x - left, y - top);;
-      const { lng, lat } = this._map.containerPointToLatLng(pos);
-      return [lng, lat];
-    }
-    return [];
+    const pos = L.point(x - left, y - top);
+    const { lng, lat } = this._map.containerPointToLatLng(pos);
+    return [lng, lat];
   },
 
   _getBearingDistance(center) {

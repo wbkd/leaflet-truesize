@@ -2099,32 +2099,6 @@ function getCoord$2(coord) {
  */
 
 /*! TurfJS v 5.1.5 | Copyright (c) 2018 TurfJS | https://github.com/Turfjs/turf/blob/master/LICENSE */
-//http://en.wikipedia.org/wiki/Haversine_formula
-//http://www.movable-type.co.uk/scripts/latlong.html
-/**
- * Takes a {@link Point} and calculates the location of a destination point given a distance in degrees, radians, miles, or kilometers; and bearing in degrees. This uses the [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula) to account for global curvature.
- *
- * @name destination
- * @param {Coord} origin starting point
- * @param {number} distance distance from the origin point
- * @param {number} bearing ranging from -180 to 180
- * @param {Object} [options={}] Optional parameters
- * @param {string} [options.units='kilometers'] miles, kilometers, degrees, or radians
- * @param {Object} [options.properties={}] Translate properties to Point
- * @returns {Feature<Point>} destination point
- * @example
- * var point = turf.point([-75.343, 39.984]);
- * var distance = 50;
- * var bearing = 90;
- * var options = {units: 'miles'};
- *
- * var destination = turf.destination(point, distance, bearing, options);
- *
- * //addToMap
- * var addToMap = [point, destination]
- * destination.properties['marker-color'] = '#f00';
- * point.properties['marker-color'] = '#0f0';
- */
 function destination(origin, distance, bearing, options) {
   var degrees2radians$$1 = Math.PI / 180;
   var radians2degrees$$1 = 180 / Math.PI;
@@ -2227,89 +2201,64 @@ L$1.TrueSize = L$1.Layer.extend({
     var dragIcon = L$1.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
     var dragMarker = L$1.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker);
+    return this._addMarkerHooks(dragMarker);
+  },
+  _addMarkerHooks: function _addMarkerHooks(marker) {
+    return marker.on('dragstart', this._onMarkerDragStart, this).on('drag', this._onMarkerDrag, this);
+  },
+  _onMarkerDragStart: function _onMarkerDragStart(evt) {
+    var _evt$target$_latlng = evt.target._latlng,
+        lng = _evt$target$_latlng.lng,
+        lat = _evt$target$_latlng.lat;
+
+    this._initialBearingDistance = this._getBearingDistance([lng, lat]);
+  },
+  _onMarkerDrag: function _onMarkerDrag(evt) {
+    this._redraw([evt.latlng.lng, evt.latlng.lat]);
   },
   _createDraggable: function _createDraggable(layer) {
-    var draggable = new L$1.Draggable(layer._path);
-    draggable.enable();
+    var draggablePath = new L$1.Draggable(layer._path);
+    draggablePath.enable();
 
-    if (isIos) {
-      return this._addTouchHooks(draggable);
-    }
-    return this._addHooks(draggable);
+    return this._addGeometryHooks(draggablePath);
   },
-  _addHooks: function _addHooks(item) {
-    var _this = this;
-
-    return item.on('dragstart', function (evt) {
-      return _this._onDragStart(evt, _this._currentLayer);
-    }).on('drag', function (evt) {
-      return _this._onDrag(evt, _this._currentLayer);
-    });
-  },
-  _addTouchHooks: function _addTouchHooks(item) {
-    var START = 'touchstart';
-    var MOVE = 'touchmove';
+  _addGeometryHooks: function _addGeometryHooks(item) {
+    var START = isIos ? 'touchstart' : 'touchstart mousedown';
+    var MOVE = isIos ? 'touchmove' : 'touchmove';
 
     L$1.DomEvent.on(item._dragStartTarget, START, this._onDragStart, this);
     L$1.DomEvent.on(item._dragStartTarget, MOVE, this._onDrag, this);
+
     return item;
   },
   _onDragStart: function _onDragStart(evt) {
     var event = evt.touches ? evt.touches[0] : evt;
-
     var startPos = this._getLatLngFromEvent(event);
+
     this._initialBearingDistance = this._getBearingDistance(startPos);
   },
   _onDrag: function _onDrag(evt) {
-    if (evt.latlng) return this._redraw([evt.latlng.lng, evt.latlng.lat]);
+    var event = evt.touches ? evt.touches[0] : evt;
+    var newPos = this._getLatLngFromEvent(event);
 
-    var event = evt.latlng && evt.latlng;
-    if (isIos) {
-      event = evt.touches[0];
-    } else {
-      event = evt.originalEvent.touches ? evt.originalEvent.touches[0] : evt.originalEvent;
-    }
-
-    var _map$mouseEventToLatL = this._map.mouseEventToLatLng(event),
-        lng = _map$mouseEventToLatL.lng,
-        lat = _map$mouseEventToLatL.lat;
-
-    this._redraw([lng, lat]);
+    this._redraw(newPos);
   },
   _getLatLngFromEvent: function _getLatLngFromEvent(evt) {
-    if (evt.target._latlng) {
-      // marker
-      var _evt$target$_latlng = evt.target._latlng,
-          lng = _evt$target$_latlng.lng,
-          lat = _evt$target$_latlng.lat;
+    var _map$_container$getCl = this._map._container.getClientRects()[0],
+        left = _map$_container$getCl.left,
+        top = _map$_container$getCl.top;
 
-      return [lng, lat];
-    } else {
-      // layer
-      var _map$_container$getCl = this._map._container.getClientRects()[0],
-          left = _map$_container$getCl.left,
-          top = _map$_container$getCl.top;
-
-      var x = null;
-      var y = null;
-      if (isIos) {
-        x = evt.clientX;
+    var x = evt.clientX,
         y = evt.clientY;
-      } else {
-        x = evt.target._startPoint.x;
-        y = evt.target._startPoint.y;
-      }
 
-      var pos = L$1.point(x - left, y - top);
 
-      var _map$containerPointTo = this._map.containerPointToLatLng(pos),
-          _lng = _map$containerPointTo.lng,
-          _lat = _map$containerPointTo.lat;
+    var pos = L$1.point(x - left, y - top);
 
-      return [_lng, _lat];
-    }
-    return [];
+    var _map$containerPointTo = this._map.containerPointToLatLng(pos),
+        lng = _map$containerPointTo.lng,
+        lat = _map$containerPointTo.lat;
+
+    return [lng, lat];
   },
   _getBearingDistance: function _getBearingDistance(center) {
     return coordAll(this._currentLayer.feature).map(function (coord) {
