@@ -1,10 +1,11 @@
+(function(l, i, v, e) { v = l.createElement(i); v.async = 1; v.src = '//' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; e = l.getElementsByTagName(i)[0]; e.parentNode.insertBefore(v, e)})(document, 'script');
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
-	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
-	(factory(global.L));
-}(this, (function (L) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet'), require('zlib')) :
+	typeof define === 'function' && define.amd ? define(['leaflet', 'zlib'], factory) :
+	(factory(global.L,global.zlib));
+}(this, (function (L$1,zlib) { 'use strict';
 
-L = L && L.hasOwnProperty('default') ? L['default'] : L;
+L$1 = L$1 && L$1.hasOwnProperty('default') ? L$1['default'] : L$1;
 
 /**
  * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
@@ -33,24 +34,7 @@ var factors = {
 };
 
 /**
- * Wraps a GeoJSON {@link Geometry} in a GeoJSON {@link Feature}.
- *
- * @name feature
- * @param {Geometry} geometry input geometry
- * @param {Object} [properties={}] an Object of key-value pairs to add as properties
- * @param {Object} [options={}] Optional Parameters
- * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
- * @param {string|number} [options.id] Identifier associated with the Feature
- * @returns {Feature} a GeoJSON Feature
- * @example
- * var geometry = {
- *   "type": "Point",
- *   "coordinates": [110, 50]
- * };
- *
- * var feature = turf.feature(geometry);
- *
- * //=feature
+ * Units of measurement factors based on 1 meter.
  */
 function feature(geometry, properties, options) {
     // Optional Parameters
@@ -75,19 +59,22 @@ function feature(geometry, properties, options) {
 }
 
 /**
- * Creates a {@link Point} {@link Feature} from a Position.
+ * Creates a GeoJSON {@link Geometry} from a Geometry string type & coordinates.
+ * For GeometryCollection type use `helpers.geometryCollection`
  *
- * @name point
- * @param {Array<number>} coordinates longitude, latitude position (each in decimal degrees)
- * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @name geometry
+ * @param {string} type Geometry Type
+ * @param {Array<number>} coordinates Coordinates
  * @param {Object} [options={}] Optional Parameters
- * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
- * @param {string|number} [options.id] Identifier associated with the Feature
- * @returns {Feature<Point>} a Point feature
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Geometry
+ * @returns {Geometry} a GeoJSON Geometry
  * @example
- * var point = turf.point([-75.343, 39.984]);
+ * var type = 'Point';
+ * var coordinates = [110, 50];
  *
- * //=point
+ * var geometry = turf.geometry(type, coordinates);
+ *
+ * //=geometry
  */
 function point(coordinates, properties, options) {
     if (!coordinates) throw new Error('coordinates is required');
@@ -102,13 +89,23 @@ function point(coordinates, properties, options) {
 }
 
 /**
- * Convert a distance measurement (assuming a spherical Earth) from radians to a more friendly unit.
- * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ * Creates a {@link Point} {@link FeatureCollection} from an Array of Point coordinates.
  *
- * @name radiansToLength
- * @param {number} radians in radians across the sphere
- * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
- * @returns {number} distance
+ * @name points
+ * @param {Array<Array<number>>} coordinates an array of Points
+ * @param {Object} [properties={}] Translate these properties to each Feature
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the FeatureCollection
+ * @param {string|number} [options.id] Identifier associated with the FeatureCollection
+ * @returns {FeatureCollection<Point>} Point Feature
+ * @example
+ * var points = turf.points([
+ *   [-75, 39],
+ *   [-80, 45],
+ *   [-78, 50]
+ * ]);
+ *
+ * //=points
  */
 function radiansToLength(radians, units) {
     if (radians === undefined || radians === null) throw new Error('radians is required');
@@ -138,11 +135,13 @@ function lengthToRadians(distance, units) {
 }
 
 /**
- * Converts an angle in radians to degrees
+ * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into degrees
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, centimeters, kilometres, feet
  *
- * @name radiansToDegrees
- * @param {number} radians angle in radians
- * @returns {number} degrees between 0 and 360 degrees
+ * @name lengthToDegrees
+ * @param {number} distance in real units
+ * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
+ * @returns {number} degrees
  */
 function radiansToDegrees(radians) {
     if (radians === null || radians === undefined) throw new Error('radians is required');
@@ -166,15 +165,13 @@ function degreesToRadians(degrees) {
 }
 
 /**
- * isNumber
+ * Converts a length to the requested unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
  *
- * @param {*} num Number to validate
- * @returns {boolean} true/false
- * @example
- * turf.isNumber(123)
- * //=true
- * turf.isNumber('foo')
- * //=false
+ * @param {number} length to be converted
+ * @param {string} originalUnit of the length
+ * @param {string} [finalUnit='kilometers'] returned unit
+ * @returns {number} the converted length
  */
 function isNumber(num) {
     return !isNaN(num) && num !== null && !Array.isArray(num);
@@ -251,18 +248,8 @@ function validateId(id) {
     if (['string', 'number'].indexOf(typeof id) === -1) throw new Error('id must be a number or a string');
 }
 
-/**
- * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
- *
- * @name getCoord
- * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
- * @returns {Array<number>} coordinates
- * @example
- * var pt = turf.point([10, 10]);
- *
- * var coord = turf.getCoord(pt);
- * //= [10, 10]
- */
+// Deprecated methods
+
 function getCoord(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -272,31 +259,19 @@ function getCoord(coord) {
     throw new Error('coord must be GeoJSON Point or an Array of numbers');
 }
 
-//http://en.wikipedia.org/wiki/Haversine_formula
-//http://www.movable-type.co.uk/scripts/latlong.html
-
 /**
- * Takes two {@link Point|points} and finds the geographic bearing between them,
- * i.e. the angle measured in degrees from the north line (0 degrees)
+ * Unwrap coordinates from a Feature, Geometry Object or an Array
  *
- * @name bearing
- * @param {Coord} start starting Point
- * @param {Coord} end ending Point
- * @param {Object} [options={}] Optional parameters
- * @param {boolean} [options.final=false] calculates the final bearing if true
- * @returns {number} bearing in decimal degrees, between -180 and 180 degrees (positive clockwise)
+ * @name getCoords
+ * @param {Array<any>|Geometry|Feature} coords Feature, Geometry Object or an Array
+ * @returns {Array<any>} coordinates
  * @example
- * var point1 = turf.point([-75.343, 39.984]);
- * var point2 = turf.point([-75.534, 39.123]);
+ * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
  *
- * var bearing = turf.bearing(point1, point2);
- *
- * //addToMap
- * var addToMap = [point1, point2]
- * point1.properties['marker-color'] = '#f00'
- * point2.properties['marker-color'] = '#0f0'
- * point1.properties.bearing = bearing
+ * var coords = turf.getCoords(poly);
+ * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
  */
+
 function bearing(start, end, options) {
     // Optional parameters
     options = options || {};
@@ -335,18 +310,6 @@ function calculateFinalBearing(start, end) {
     return bear;
 }
 
-/**
- * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
- *
- * @name getCoord
- * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
- * @returns {Array<number>} coordinates
- * @example
- * var pt = turf.point([10, 10]);
- *
- * var coord = turf.getCoord(pt);
- * //= [10, 10]
- */
 function getCoord$1(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -356,33 +319,19 @@ function getCoord$1(coord) {
     throw new Error('coord must be GeoJSON Point or an Array of numbers');
 }
 
-//http://en.wikipedia.org/wiki/Haversine_formula
-//http://www.movable-type.co.uk/scripts/latlong.html
-
 /**
- * Calculates the distance between two {@link Point|points} in degrees, radians,
- * miles, or kilometers. This uses the
- * [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula)
- * to account for global curvature.
+ * Unwrap coordinates from a Feature, Geometry Object or an Array
  *
- * @name distance
- * @param {Coord} from origin point
- * @param {Coord} to destination point
- * @param {Object} [options={}] Optional parameters
- * @param {string} [options.units='kilometers'] can be degrees, radians, miles, or kilometers
- * @returns {number} distance between the two points
+ * @name getCoords
+ * @param {Array<any>|Geometry|Feature} coords Feature, Geometry Object or an Array
+ * @returns {Array<any>} coordinates
  * @example
- * var from = turf.point([-75.343, 39.984]);
- * var to = turf.point([-75.534, 39.123]);
- * var options = {units: 'miles'};
+ * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
  *
- * var distance = turf.distance(from, to, options);
- *
- * //addToMap
- * var addToMap = [from, to];
- * from.properties.distance = distance;
- * to.properties.distance = distance;
+ * var coords = turf.getCoords(poly);
+ * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
  */
+
 function distance(from, to, options) {
     // Optional parameters
     options = options || {};
@@ -857,39 +806,6 @@ function distance(from, to, options) {
 
 // Deprecated methods
 
-/**
- * Callback for coordEach
- *
- * @callback coordEachCallback
- * @param {Array<number>} currentCoord The current coordinate being processed.
- * @param {number} coordIndex The current index of the coordinate being processed.
- * @param {number} featureIndex The current index of the Feature being processed.
- * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
- * @param {number} geometryIndex The current index of the Geometry being processed.
- */
-
-/**
- * Iterate over coordinates in any GeoJSON object, similar to Array.forEach()
- *
- * @name coordEach
- * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
- * @param {Function} callback a method that takes (currentCoord, coordIndex, featureIndex, multiFeatureIndex)
- * @param {boolean} [excludeWrapCoord=false] whether or not to include the final coordinate of LinearRings that wraps the ring in its iteration.
- * @returns {void}
- * @example
- * var features = turf.featureCollection([
- *   turf.point([26, 37], {"foo": "bar"}),
- *   turf.point([36, 53], {"hello": "world"})
- * ]);
- *
- * turf.coordEach(features, function (currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
- *   //=currentCoord
- *   //=coordIndex
- *   //=featureIndex
- *   //=multiFeatureIndex
- *   //=geometryIndex
- * });
- */
 function coordEach(geojson, callback, excludeWrapCoord) {
     // Handles null Geometry -- Skips this GeoJSON
     if (geojson === null) return;
@@ -2069,18 +1985,6 @@ function coordAll(geojson) {
 
 // Deprecated methods
 
-/**
- * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
- *
- * @name getCoord
- * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
- * @returns {Array<number>} coordinates
- * @example
- * var pt = turf.point([10, 10]);
- *
- * var coord = turf.getCoord(pt);
- * //= [10, 10]
- */
 function getCoord$2(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -2247,15 +2151,13 @@ function destination(origin, distance, bearing, options) {
   return point([lng, lat], properties);
 }
 
-function isUndefined(obj) {
-  return typeof obj === 'undefined';
-}
 
-var isTouch = !isUndefined(window.orientation);
+
+var isIos = L.Browser.touch && L.Browser.mobileWebkit;
 
 var id = 0;
 
-L.TrueSize = L.Layer.extend({
+L$1.TrueSize = L$1.Layer.extend({
   geoJSON: {
     "type": "Feature",
     "properties": {},
@@ -2291,11 +2193,11 @@ L.TrueSize = L.Layer.extend({
     this._options = Object.assign({}, this.options, options);
     this._geometryType = geoJSON.geometry.type;
 
-    L.Util.setOptions(this, this._options);
+    L$1.Util.setOptions(this, this._options);
     this._initGeoJson(geoJSON, this._options);
   },
   _initGeoJson: function _initGeoJson(geoJSON, options) {
-    this._geoJSONLayer = L.geoJSON(geoJSON, options);
+    this._geoJSONLayer = L$1.geoJSON(geoJSON, options);
     // for unique plugin id
     this._currentId = id++;
   },
@@ -2322,15 +2224,18 @@ L.TrueSize = L.Layer.extend({
         markerDiv = options.markerDiv,
         iconAnchor = options.iconAnchor;
 
-    var dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
-    var dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
+    var dragIcon = L$1.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
+    var dragMarker = L$1.marker(center, { icon: dragIcon, draggable: true });
 
     return this._addHooks(dragMarker);
   },
   _createDraggable: function _createDraggable(layer) {
-    var draggable = new L.Draggable(layer._path);
+    var draggable = new L$1.Draggable(layer._path);
     draggable.enable();
 
+    if (isIos) {
+      return this._addTouchHooks(draggable);
+    }
     return this._addHooks(draggable);
   },
   _addHooks: function _addHooks(item) {
@@ -2342,12 +2247,29 @@ L.TrueSize = L.Layer.extend({
       return _this._onDrag(evt, _this._currentLayer);
     });
   },
+  _addTouchHooks: function _addTouchHooks(item) {
+    var START = 'touchstart';
+    var MOVE = 'touchmove';
+
+    L$1.DomEvent.on(item._dragStartTarget, START, this._onDragStart, this);
+    L$1.DomEvent.on(item._dragStartTarget, MOVE, this._onDrag, this);
+    return item;
+  },
   _onDragStart: function _onDragStart(evt) {
-    var startPos = this._getLatLngFromEvent(evt);
+    var event = evt.touches ? evt.touches[0] : evt;
+
+    var startPos = this._getLatLngFromEvent(event);
     this._initialBearingDistance = this._getBearingDistance(startPos);
   },
   _onDrag: function _onDrag(evt) {
-    var event = isTouch ? evt.originalEvent.touches[0] : evt.originalEvent;
+    if (evt.latlng) return this._redraw([evt.latlng.lng, evt.latlng.lat]);
+
+    var event = evt.latlng && evt.latlng;
+    if (isIos) {
+      event = evt.touches[0];
+    } else {
+      event = evt.originalEvent.touches ? evt.originalEvent.touches[0] : evt.originalEvent;
+    }
 
     var _map$mouseEventToLatL = this._map.mouseEventToLatLng(event),
         lng = _map$mouseEventToLatL.lng,
@@ -2369,11 +2291,17 @@ L.TrueSize = L.Layer.extend({
           left = _map$_container$getCl.left,
           top = _map$_container$getCl.top;
 
-      var _evt$target$_startPoi = evt.target._startPoint,
-          x = _evt$target$_startPoi.x,
-          y = _evt$target$_startPoi.y;
+      var x = null;
+      var y = null;
+      if (isIos) {
+        x = evt.clientX;
+        y = evt.clientY;
+      } else {
+        x = evt.target._startPoint.x;
+        y = evt.target._startPoint.y;
+      }
 
-      var pos = L.point(x - left, y - top);
+      var pos = L$1.point(x - left, y - top);
 
       var _map$containerPointTo = this._map.containerPointToLatLng(pos),
           _lng = _map$containerPointTo.lng,
@@ -2409,7 +2337,6 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
     this._draggableLayer = this._createDraggable(this._currentLayer);
@@ -2450,8 +2377,8 @@ L.TrueSize = L.Layer.extend({
   }
 });
 
-L.trueSize = function (geoJSON, options) {
-  return new L.TrueSize(geoJSON, options);
+L$1.trueSize = function (geoJSON, options) {
+  return new L$1.TrueSize(geoJSON, options);
 };
 
 })));

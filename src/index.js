@@ -2,7 +2,8 @@ import L from 'leaflet';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import { coordAll as turfCoordAll } from '@turf/meta';
-import { destination, isTouch } from './helper';
+import { destination, isIos } from './helper';
+import { constants } from 'zlib';
 
 let id = 0;
 
@@ -80,6 +81,9 @@ L.TrueSize = L.Layer.extend({
     const draggable = new L.Draggable(layer._path);
     draggable.enable();
 
+    if (isIos) {
+      return this._addTouchHooks(draggable);
+    }
     return this._addHooks(draggable);
   },
 
@@ -89,15 +93,33 @@ L.TrueSize = L.Layer.extend({
       .on('drag', (evt) => this._onDrag(evt, this._currentLayer))
   },
 
+  _addTouchHooks(item) {
+    const START = 'touchstart';
+    const MOVE = 'touchmove';
+
+    L.DomEvent.on(item._dragStartTarget, START, this._onDragStart, this);
+    L.DomEvent.on(item._dragStartTarget, MOVE, this._onDrag, this);
+    return item
+  },
+
   _onDragStart(evt) {
-    const startPos = this._getLatLngFromEvent(evt);
+    const event =  evt.touches ? evt.touches[0] : evt;
+
+    const startPos = this._getLatLngFromEvent(event);
     this._initialBearingDistance = this._getBearingDistance(startPos);
   },
 
   _onDrag(evt) {
-    const event = isTouch ? evt.originalEvent.touches[0] : evt.originalEvent;
-    const { lng, lat } = this._map.mouseEventToLatLng(event);
+    if (evt.latlng) return this._redraw([evt.latlng.lng, evt.latlng.lat]);
 
+    let event = evt.latlng && evt.latlng;
+    if (isIos) {
+      event = evt.touches[0];
+    } else {
+      event =  evt.originalEvent.touches ? evt.originalEvent.touches[0] : evt.originalEvent;
+    }
+
+    const { lng, lat } = this._map.mouseEventToLatLng(event);
     this._redraw([lng, lat]);
   },
 
@@ -109,8 +131,18 @@ L.TrueSize = L.Layer.extend({
     } else {
       // layer
       const { left, top } = this._map._container.getClientRects()[0];
-      const { x ,y } = evt.target._startPoint;
-      const pos = L.point(x - left, y - top);
+      let x = null;
+      let y = null;
+      if (isIos) {
+        x = evt.clientX;
+        y = evt.clientY;
+      } else {
+        x = evt.target._startPoint.x;
+        y = evt.target._startPoint.y;
+
+      }
+
+      const pos = L.point(x - left, y - top);;
       const { lng, lat } = this._map.containerPointToLatLng(pos);
       return [lng, lat];
     }
@@ -144,7 +176,6 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
     this._draggableLayer = this._createDraggable(this._currentLayer);
