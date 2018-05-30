@@ -1,9 +1,8 @@
-(function(l, i, v, e) { v = l.createElement(i); v.async = 1; v.src = '//' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; e = l.getElementsByTagName(i)[0]; e.parentNode.insertBefore(v, e)})(document, 'script');
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet'), require('zlib')) :
-	typeof define === 'function' && define.amd ? define(['leaflet', 'zlib'], factory) :
-	(factory(global.L,global.zlib));
-}(this, (function (L$1,zlib) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
+	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
+	(factory(global.L));
+}(this, (function (L$1) { 'use strict';
 
 L$1 = L$1 && L$1.hasOwnProperty('default') ? L$1['default'] : L$1;
 
@@ -34,7 +33,24 @@ var factors = {
 };
 
 /**
- * Units of measurement factors based on 1 meter.
+ * Wraps a GeoJSON {@link Geometry} in a GeoJSON {@link Feature}.
+ *
+ * @name feature
+ * @param {Geometry} geometry input geometry
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
+ * @param {Object} [options={}] Optional Parameters
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature} a GeoJSON Feature
+ * @example
+ * var geometry = {
+ *   "type": "Point",
+ *   "coordinates": [110, 50]
+ * };
+ *
+ * var feature = turf.feature(geometry);
+ *
+ * //=feature
  */
 function feature(geometry, properties, options) {
     // Optional Parameters
@@ -59,22 +75,19 @@ function feature(geometry, properties, options) {
 }
 
 /**
- * Creates a GeoJSON {@link Geometry} from a Geometry string type & coordinates.
- * For GeometryCollection type use `helpers.geometryCollection`
+ * Creates a {@link Point} {@link Feature} from a Position.
  *
- * @name geometry
- * @param {string} type Geometry Type
- * @param {Array<number>} coordinates Coordinates
+ * @name point
+ * @param {Array<number>} coordinates longitude, latitude position (each in decimal degrees)
+ * @param {Object} [properties={}] an Object of key-value pairs to add as properties
  * @param {Object} [options={}] Optional Parameters
- * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Geometry
- * @returns {Geometry} a GeoJSON Geometry
+ * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the Feature
+ * @param {string|number} [options.id] Identifier associated with the Feature
+ * @returns {Feature<Point>} a Point feature
  * @example
- * var type = 'Point';
- * var coordinates = [110, 50];
+ * var point = turf.point([-75.343, 39.984]);
  *
- * var geometry = turf.geometry(type, coordinates);
- *
- * //=geometry
+ * //=point
  */
 function point(coordinates, properties, options) {
     if (!coordinates) throw new Error('coordinates is required');
@@ -89,23 +102,13 @@ function point(coordinates, properties, options) {
 }
 
 /**
- * Creates a {@link Point} {@link FeatureCollection} from an Array of Point coordinates.
+ * Convert a distance measurement (assuming a spherical Earth) from radians to a more friendly unit.
+ * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
  *
- * @name points
- * @param {Array<Array<number>>} coordinates an array of Points
- * @param {Object} [properties={}] Translate these properties to each Feature
- * @param {Object} [options={}] Optional Parameters
- * @param {Array<number>} [options.bbox] Bounding Box Array [west, south, east, north] associated with the FeatureCollection
- * @param {string|number} [options.id] Identifier associated with the FeatureCollection
- * @returns {FeatureCollection<Point>} Point Feature
- * @example
- * var points = turf.points([
- *   [-75, 39],
- *   [-80, 45],
- *   [-78, 50]
- * ]);
- *
- * //=points
+ * @name radiansToLength
+ * @param {number} radians in radians across the sphere
+ * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
+ * @returns {number} distance
  */
 function radiansToLength(radians, units) {
     if (radians === undefined || radians === null) throw new Error('radians is required');
@@ -135,13 +138,11 @@ function lengthToRadians(distance, units) {
 }
 
 /**
- * Convert a distance measurement (assuming a spherical Earth) from a real-world unit into degrees
- * Valid units: miles, nauticalmiles, inches, yards, meters, metres, centimeters, kilometres, feet
+ * Converts an angle in radians to degrees
  *
- * @name lengthToDegrees
- * @param {number} distance in real units
- * @param {string} [units='kilometers'] can be degrees, radians, miles, or kilometers inches, yards, metres, meters, kilometres, kilometers.
- * @returns {number} degrees
+ * @name radiansToDegrees
+ * @param {number} radians angle in radians
+ * @returns {number} degrees between 0 and 360 degrees
  */
 function radiansToDegrees(radians) {
     if (radians === null || radians === undefined) throw new Error('radians is required');
@@ -165,13 +166,15 @@ function degreesToRadians(degrees) {
 }
 
 /**
- * Converts a length to the requested unit.
- * Valid units: miles, nauticalmiles, inches, yards, meters, metres, kilometers, centimeters, feet
+ * isNumber
  *
- * @param {number} length to be converted
- * @param {string} originalUnit of the length
- * @param {string} [finalUnit='kilometers'] returned unit
- * @returns {number} the converted length
+ * @param {*} num Number to validate
+ * @returns {boolean} true/false
+ * @example
+ * turf.isNumber(123)
+ * //=true
+ * turf.isNumber('foo')
+ * //=false
  */
 function isNumber(num) {
     return !isNaN(num) && num !== null && !Array.isArray(num);
@@ -248,8 +251,18 @@ function validateId(id) {
     if (['string', 'number'].indexOf(typeof id) === -1) throw new Error('id must be a number or a string');
 }
 
-// Deprecated methods
-
+/**
+ * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
+ *
+ * @name getCoord
+ * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
+ * @returns {Array<number>} coordinates
+ * @example
+ * var pt = turf.point([10, 10]);
+ *
+ * var coord = turf.getCoord(pt);
+ * //= [10, 10]
+ */
 function getCoord(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -259,19 +272,31 @@ function getCoord(coord) {
     throw new Error('coord must be GeoJSON Point or an Array of numbers');
 }
 
-/**
- * Unwrap coordinates from a Feature, Geometry Object or an Array
- *
- * @name getCoords
- * @param {Array<any>|Geometry|Feature} coords Feature, Geometry Object or an Array
- * @returns {Array<any>} coordinates
- * @example
- * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
- *
- * var coords = turf.getCoords(poly);
- * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
- */
+//http://en.wikipedia.org/wiki/Haversine_formula
+//http://www.movable-type.co.uk/scripts/latlong.html
 
+/**
+ * Takes two {@link Point|points} and finds the geographic bearing between them,
+ * i.e. the angle measured in degrees from the north line (0 degrees)
+ *
+ * @name bearing
+ * @param {Coord} start starting Point
+ * @param {Coord} end ending Point
+ * @param {Object} [options={}] Optional parameters
+ * @param {boolean} [options.final=false] calculates the final bearing if true
+ * @returns {number} bearing in decimal degrees, between -180 and 180 degrees (positive clockwise)
+ * @example
+ * var point1 = turf.point([-75.343, 39.984]);
+ * var point2 = turf.point([-75.534, 39.123]);
+ *
+ * var bearing = turf.bearing(point1, point2);
+ *
+ * //addToMap
+ * var addToMap = [point1, point2]
+ * point1.properties['marker-color'] = '#f00'
+ * point2.properties['marker-color'] = '#0f0'
+ * point1.properties.bearing = bearing
+ */
 function bearing(start, end, options) {
     // Optional parameters
     options = options || {};
@@ -310,6 +335,18 @@ function calculateFinalBearing(start, end) {
     return bear;
 }
 
+/**
+ * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
+ *
+ * @name getCoord
+ * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
+ * @returns {Array<number>} coordinates
+ * @example
+ * var pt = turf.point([10, 10]);
+ *
+ * var coord = turf.getCoord(pt);
+ * //= [10, 10]
+ */
 function getCoord$1(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -319,19 +356,33 @@ function getCoord$1(coord) {
     throw new Error('coord must be GeoJSON Point or an Array of numbers');
 }
 
-/**
- * Unwrap coordinates from a Feature, Geometry Object or an Array
- *
- * @name getCoords
- * @param {Array<any>|Geometry|Feature} coords Feature, Geometry Object or an Array
- * @returns {Array<any>} coordinates
- * @example
- * var poly = turf.polygon([[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]);
- *
- * var coords = turf.getCoords(poly);
- * //= [[[119.32, -8.7], [119.55, -8.69], [119.51, -8.54], [119.32, -8.7]]]
- */
+//http://en.wikipedia.org/wiki/Haversine_formula
+//http://www.movable-type.co.uk/scripts/latlong.html
 
+/**
+ * Calculates the distance between two {@link Point|points} in degrees, radians,
+ * miles, or kilometers. This uses the
+ * [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula)
+ * to account for global curvature.
+ *
+ * @name distance
+ * @param {Coord} from origin point
+ * @param {Coord} to destination point
+ * @param {Object} [options={}] Optional parameters
+ * @param {string} [options.units='kilometers'] can be degrees, radians, miles, or kilometers
+ * @returns {number} distance between the two points
+ * @example
+ * var from = turf.point([-75.343, 39.984]);
+ * var to = turf.point([-75.534, 39.123]);
+ * var options = {units: 'miles'};
+ *
+ * var distance = turf.distance(from, to, options);
+ *
+ * //addToMap
+ * var addToMap = [from, to];
+ * from.properties.distance = distance;
+ * to.properties.distance = distance;
+ */
 function distance(from, to, options) {
     // Optional parameters
     options = options || {};
@@ -806,6 +857,39 @@ function distance(from, to, options) {
 
 // Deprecated methods
 
+/**
+ * Callback for coordEach
+ *
+ * @callback coordEachCallback
+ * @param {Array<number>} currentCoord The current coordinate being processed.
+ * @param {number} coordIndex The current index of the coordinate being processed.
+ * @param {number} featureIndex The current index of the Feature being processed.
+ * @param {number} multiFeatureIndex The current index of the Multi-Feature being processed.
+ * @param {number} geometryIndex The current index of the Geometry being processed.
+ */
+
+/**
+ * Iterate over coordinates in any GeoJSON object, similar to Array.forEach()
+ *
+ * @name coordEach
+ * @param {FeatureCollection|Feature|Geometry} geojson any GeoJSON object
+ * @param {Function} callback a method that takes (currentCoord, coordIndex, featureIndex, multiFeatureIndex)
+ * @param {boolean} [excludeWrapCoord=false] whether or not to include the final coordinate of LinearRings that wraps the ring in its iteration.
+ * @returns {void}
+ * @example
+ * var features = turf.featureCollection([
+ *   turf.point([26, 37], {"foo": "bar"}),
+ *   turf.point([36, 53], {"hello": "world"})
+ * ]);
+ *
+ * turf.coordEach(features, function (currentCoord, coordIndex, featureIndex, multiFeatureIndex, geometryIndex) {
+ *   //=currentCoord
+ *   //=coordIndex
+ *   //=featureIndex
+ *   //=multiFeatureIndex
+ *   //=geometryIndex
+ * });
+ */
 function coordEach(geojson, callback, excludeWrapCoord) {
     // Handles null Geometry -- Skips this GeoJSON
     if (geojson === null) return;
@@ -1985,6 +2069,18 @@ function coordAll(geojson) {
 
 // Deprecated methods
 
+/**
+ * Unwrap a coordinate from a Point Feature, Geometry or a single coordinate.
+ *
+ * @name getCoord
+ * @param {Array<number>|Geometry<Point>|Feature<Point>} coord GeoJSON Point or an Array of numbers
+ * @returns {Array<number>} coordinates
+ * @example
+ * var pt = turf.point([10, 10]);
+ *
+ * var coord = turf.getCoord(pt);
+ * //= [10, 10]
+ */
 function getCoord$2(coord) {
     if (!coord) throw new Error('coord is required');
     if (coord.type === 'Feature' && coord.geometry !== null && coord.geometry.type === 'Point') return coord.geometry.coordinates;
@@ -2099,6 +2195,32 @@ function getCoord$2(coord) {
  */
 
 /*! TurfJS v 5.1.5 | Copyright (c) 2018 TurfJS | https://github.com/Turfjs/turf/blob/master/LICENSE */
+//http://en.wikipedia.org/wiki/Haversine_formula
+//http://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * Takes a {@link Point} and calculates the location of a destination point given a distance in degrees, radians, miles, or kilometers; and bearing in degrees. This uses the [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula) to account for global curvature.
+ *
+ * @name destination
+ * @param {Coord} origin starting point
+ * @param {number} distance distance from the origin point
+ * @param {number} bearing ranging from -180 to 180
+ * @param {Object} [options={}] Optional parameters
+ * @param {string} [options.units='kilometers'] miles, kilometers, degrees, or radians
+ * @param {Object} [options.properties={}] Translate properties to Point
+ * @returns {Feature<Point>} destination point
+ * @example
+ * var point = turf.point([-75.343, 39.984]);
+ * var distance = 50;
+ * var bearing = 90;
+ * var options = {units: 'miles'};
+ *
+ * var destination = turf.destination(point, distance, bearing, options);
+ *
+ * //addToMap
+ * var addToMap = [point, destination]
+ * destination.properties['marker-color'] = '#f00';
+ * point.properties['marker-color'] = '#0f0';
+ */
 function destination(origin, distance, bearing, options) {
   var degrees2radians$$1 = Math.PI / 180;
   var radians2degrees$$1 = 180 / Math.PI;

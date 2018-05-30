@@ -3,7 +3,6 @@ import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import { coordAll as turfCoordAll } from '@turf/meta';
 import { destination, isIos, isUndefined } from './helper';
-import { constants } from 'zlib';
 
 let id = 0;
 
