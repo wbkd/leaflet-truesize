@@ -2,9 +2,9 @@
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('leaflet')) :
 	typeof define === 'function' && define.amd ? define(['leaflet'], factory) :
 	(factory(global.L));
-}(this, (function (L) { 'use strict';
+}(this, (function (L$1) { 'use strict';
 
-L = L && L.hasOwnProperty('default') ? L['default'] : L;
+L$1 = L$1 && L$1.hasOwnProperty('default') ? L$1['default'] : L$1;
 
 /**
  * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
@@ -2251,11 +2251,11 @@ function isUndefined(obj) {
   return typeof obj === 'undefined';
 }
 
-var isTouch = !isUndefined(window.orientation);
+var isIos = L.Browser.touch && L.Browser.mobileWebkit;
 
 var id = 0;
 
-L.TrueSize = L.Layer.extend({
+L$1.TrueSize = L$1.Layer.extend({
   geoJSON: {
     "type": "Feature",
     "properties": {},
@@ -2291,11 +2291,11 @@ L.TrueSize = L.Layer.extend({
     this._options = Object.assign({}, this.options, options);
     this._geometryType = geoJSON.geometry.type;
 
-    L.Util.setOptions(this, this._options);
+    L$1.Util.setOptions(this, this._options);
     this._initGeoJson(geoJSON, this._options);
   },
   _initGeoJson: function _initGeoJson(geoJSON, options) {
-    this._geoJSONLayer = L.geoJSON(geoJSON, options);
+    this._geoJSONLayer = L$1.geoJSON(geoJSON, options);
     // for unique plugin id
     this._currentId = id++;
   },
@@ -2310,7 +2310,7 @@ L.TrueSize = L.Layer.extend({
     var center = [centerCoords.lng, centerCoords.lat];
 
     // wrap currentlayer into draggable layer
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
 
     if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
@@ -2322,66 +2322,80 @@ L.TrueSize = L.Layer.extend({
         markerDiv = options.markerDiv,
         iconAnchor = options.iconAnchor;
 
-    var dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
-    var dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
+    var dragIcon = L$1.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
+    var dragMarker = L$1.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker);
+    return this._addMarkerHooks(dragMarker);
+  },
+  _addMarkerHooks: function _addMarkerHooks(marker) {
+    return marker.on('dragstart', this._onMarkerDragStart, this).on('drag', this._onMarkerDrag, this);
+  },
+  _onMarkerDragStart: function _onMarkerDragStart(evt) {
+    var _evt$target$_latlng = evt.target._latlng,
+        lng = _evt$target$_latlng.lng,
+        lat = _evt$target$_latlng.lat;
+
+
+    this._initialBearingDistance = this._getBearingDistance([lng, lat]);
+  },
+  _onMarkerDrag: function _onMarkerDrag(evt) {
+    this._redraw([evt.latlng.lng, evt.latlng.lat]);
   },
   _createDraggable: function _createDraggable(layer) {
-    var draggable = new L.Draggable(layer._path);
-    draggable.enable();
+    var draggablePath = new L$1.Draggable(layer._path);
+    draggablePath.enable();
 
-    return this._addHooks(draggable);
+    return this._addPathHooks(draggablePath);
   },
-  _addHooks: function _addHooks(item) {
-    var _this = this;
+  _addPathHooks: function _addPathHooks(item) {
+    // for ios we use the native events instead of leaflet events
+    // because it´s not working correctly with the dragstart and drag evt
+    if (isIos) {
+      L$1.DomEvent.on(item._dragStartTarget, 'touchstart', this._onDragStart, this);
+      L$1.DomEvent.on(item._dragStartTarget, 'touchmove', this._onDrag, this);
 
-    return item.on('dragstart', function (evt) {
-      return _this._onDragStart(evt, _this._currentLayer);
-    }).on('drag', function (evt) {
-      return _this._onDrag(evt, _this._currentLayer);
-    });
+      return item;
+    }
+
+    return item.on('dragstart', this._onDragStart, this).on('drag', this._onDrag, this);
   },
   _onDragStart: function _onDragStart(evt) {
-    var startPos = this._getLatLngFromEvent(evt);
-    this._initialBearingDistance = this._getBearingDistance(startPos);
+    var event = evt.touches ? evt.touches[0] : evt.target;
+    var pos = this._getPositionFromEvent(event);
+    var coords = this._getLatLngFromPosition(pos);
+
+    this._initialBearingDistance = this._getBearingDistance(coords);
   },
   _onDrag: function _onDrag(evt) {
-    var event = isTouch ? evt.originalEvent.touches[0] : evt.originalEvent;
+    var event = evt.touches ? evt.touches[0] : evt.originalEvent;
+    var pos = this._getPositionFromEvent(event);
+    var coords = this._getLatLngFromPosition(pos);
 
-    var _map$mouseEventToLatL = this._map.mouseEventToLatLng(event),
-        lng = _map$mouseEventToLatL.lng,
-        lat = _map$mouseEventToLatL.lat;
-
-    this._redraw([lng, lat]);
+    this._redraw(coords);
   },
-  _getLatLngFromEvent: function _getLatLngFromEvent(evt) {
-    if (evt.target._latlng) {
-      // marker
-      var _evt$target$_latlng = evt.target._latlng,
-          lng = _evt$target$_latlng.lng,
-          lat = _evt$target$_latlng.lat;
-
-      return [lng, lat];
-    } else {
-      // layer
-      var _map$_container$getCl = this._map._container.getClientRects()[0],
-          left = _map$_container$getCl.left,
-          top = _map$_container$getCl.top;
-
-      var _evt$target$_startPoi = evt.target._startPoint,
-          x = _evt$target$_startPoi.x,
-          y = _evt$target$_startPoi.y;
-
-      var pos = L.point(x - left, y - top);
-
-      var _map$containerPointTo = this._map.containerPointToLatLng(pos),
-          _lng = _map$containerPointTo.lng,
-          _lat = _map$containerPointTo.lat;
-
-      return [_lng, _lat];
+  _getPositionFromEvent: function _getPositionFromEvent(evt) {
+    if (!isUndefined(evt._startPoint)) {
+      return evt._startPoint;
     }
-    return [];
+
+    return { x: evt.clientX, y: evt.clientY };
+  },
+  _getLatLngFromPosition: function _getLatLngFromPosition(pos) {
+    var _map$_container$getCl = this._map._container.getClientRects()[0],
+        left = _map$_container$getCl.left,
+        top = _map$_container$getCl.top;
+
+    var x = pos.x,
+        y = pos.y;
+
+
+    var posWithOffset = L$1.point(x - left, y - top);
+
+    var _map$containerPointTo = this._map.containerPointToLatLng(posWithOffset),
+        lng = _map$containerPointTo.lng,
+        lat = _map$containerPointTo.lat;
+
+    return [lng, lat];
   },
   _getBearingDistance: function _getBearingDistance(center) {
     return coordAll(this._currentLayer.feature).map(function (coord) {
@@ -2409,10 +2423,9 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
     this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
   onRemove: function onRemove(map) {
@@ -2450,8 +2463,8 @@ L.TrueSize = L.Layer.extend({
   }
 });
 
-L.trueSize = function (geoJSON, options) {
-  return new L.TrueSize(geoJSON, options);
+L$1.trueSize = function (geoJSON, options) {
+  return new L$1.TrueSize(geoJSON, options);
 };
 
 })));

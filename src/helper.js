@@ -60,7 +60,7 @@ export function isUndefined(obj) {
   return typeof obj === 'undefined';
 }
 
-export const isTouch = !isUndefined(window.orientation);
+export const isIos = L.Browser.touch && L.Browser.mobileWebkit;
 
 export default {
   destination,

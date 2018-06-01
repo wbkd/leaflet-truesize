@@ -2,7 +2,7 @@ import L from 'leaflet';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
 import { coordAll as turfCoordAll } from '@turf/meta';
-import { destination, isTouch } from './helper';
+import { destination, isIos, isUndefined } from './helper';
 
 let id = 0;
 
@@ -60,7 +60,7 @@ L.TrueSize = L.Layer.extend({
     const center = [centerCoords.lng, centerCoords.lat];
 
     // wrap currentlayer into draggable layer
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
 
     if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
@@ -73,48 +73,78 @@ L.TrueSize = L.Layer.extend({
     const dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor });
     const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addHooks(dragMarker);
+    return this._addMarkerHooks(dragMarker);
+  },
+
+  _addMarkerHooks(marker) {
+    return marker
+      .on('dragstart', this._onMarkerDragStart, this)
+      .on('drag', this._onMarkerDrag, this)
+  },
+
+  _onMarkerDragStart(evt) {
+    const { lng, lat } = evt.target._latlng;
+
+    this._initialBearingDistance = this._getBearingDistance([lng, lat]);
+  },
+
+  _onMarkerDrag(evt) {
+    this._redraw([evt.latlng.lng, evt.latlng.lat]);
   },
 
   _createDraggable(layer) {
-    const draggable = new L.Draggable(layer._path);
-    draggable.enable();
+    const draggablePath = new L.Draggable(layer._path);
+    draggablePath.enable();
 
-    return this._addHooks(draggable);
+    return this._addPathHooks(draggablePath);
   },
 
-  _addHooks(item) {
+  _addPathHooks(item) {
+    // for ios we use the native events instead of leaflet events
+    // because it´s not working correctly with the dragstart and drag evt
+    if (isIos) {
+      L.DomEvent.on(item._dragStartTarget, 'touchstart', this._onDragStart, this);
+      L.DomEvent.on(item._dragStartTarget, 'touchmove', this._onDrag, this);
+
+      return item;
+    }
+
     return item
-      .on('dragstart', (evt) => this._onDragStart(evt, this._currentLayer))
-      .on('drag', (evt) => this._onDrag(evt, this._currentLayer))
+      .on('dragstart', this._onDragStart, this)
+      .on('drag', this._onDrag, this)
   },
 
   _onDragStart(evt) {
-    const startPos = this._getLatLngFromEvent(evt);
-    this._initialBearingDistance = this._getBearingDistance(startPos);
+    const event =  evt.touches ? evt.touches[0] : evt.target;
+    const pos = this._getPositionFromEvent(event);
+    const coords = this._getLatLngFromPosition(pos);
+
+    this._initialBearingDistance = this._getBearingDistance(coords);
   },
 
   _onDrag(evt) {
-    const event = isTouch ? evt.originalEvent.touches[0] : evt.originalEvent;
-    const { lng, lat } = this._map.mouseEventToLatLng(event);
+    const event =  evt.touches ? evt.touches[0] : evt.originalEvent;
+    const pos = this._getPositionFromEvent(event);
+    const coords = this._getLatLngFromPosition(pos);
 
-    this._redraw([lng, lat]);
+    this._redraw(coords);
   },
 
-  _getLatLngFromEvent(evt) {
-    if (evt.target._latlng) {
-      // marker
-      const { lng, lat } = evt.target._latlng;
-      return [lng, lat];
-    } else {
-      // layer
-      const { left, top } = this._map._container.getClientRects()[0];
-      const { x ,y } = evt.target._startPoint;
-      const pos = L.point(x - left, y - top);
-      const { lng, lat } = this._map.containerPointToLatLng(pos);
-      return [lng, lat];
+  _getPositionFromEvent(evt) {
+    if (!isUndefined(evt._startPoint)) {
+      return evt._startPoint;
     }
-    return [];
+
+    return { x: evt.clientX, y: evt.clientY };
+  },
+
+  _getLatLngFromPosition(pos) {
+    const { left, top } = this._map._container.getClientRects()[0];
+    const { x, y } = pos;
+
+    const posWithOffset = L.point(x - left, y - top);
+    const { lng, lat } = this._map.containerPointToLatLng(posWithOffset);
+    return [lng, lat];
   },
 
   _getBearingDistance(center) {
@@ -137,17 +167,16 @@ L.TrueSize = L.Layer.extend({
         "type": this._geometryType,
         "coordinates": this._getCoordsByType(newPoints, this._geometryType)
       }
-    }
+    };
 
     this._geoJSONLayer.clearLayers();
     this._geoJSONLayer.addData(newFeature);
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
-    this._draggableLayer = this._createDraggable(this._currentLayer);
+    this._createDraggable(this._currentLayer);
     this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
 
