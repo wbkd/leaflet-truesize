@@ -2398,16 +2398,39 @@ L$1.TrueSize = L$1.Layer.extend({
     return [lng, lat];
   },
   _getBearingDistance: function _getBearingDistance(center) {
+    var _this = this;
+
+    if (this._isMultiPolygon()) {
+      return this._currentLayer.feature.geometry.coordinates.map(function (coords) {
+        return coords[0].map(function (coord) {
+          return _this._getBearingAndDistance(center, coord);
+        });
+      });
+    }
+
     return coordAll(this._currentLayer.feature).map(function (coord) {
-      var bearing$$1 = bearing(center, coord);
-      var distance$$1 = distance(center, coord, { units: 'kilometers' });
-      return { bearing: bearing$$1, distance: distance$$1 };
+      return _this._getBearingAndDistance(center, coord);
     });
   },
+  _getBearingAndDistance: function _getBearingAndDistance(center, coord) {
+    var bearing$$1 = bearing(center, coord);
+    var distance$$1 = distance(center, coord, { units: 'kilometers' });
+    return { bearing: bearing$$1, distance: distance$$1 };
+  },
   _redraw: function _redraw(newPos) {
-    var newPoints = this._initialBearingDistance.map(function (params) {
-      return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
-    });
+    var newPoints = void 0;
+
+    if (this._isMultiPolygon()) {
+      newPoints = this._initialBearingDistance.map(function (coords) {
+        return [coords.map(function (params) {
+          return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+        })];
+      });
+    } else {
+      newPoints = this._initialBearingDistance.map(function (params) {
+        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+      });
+    }
 
     var newFeature = {
       "type": "Feature",
@@ -2451,7 +2474,7 @@ L$1.TrueSize = L$1.Layer.extend({
         }
       case 'MultiPolygon':
         {
-          return [[point]];
+          return point;
           break;
         }
       default:
@@ -2460,6 +2483,9 @@ L$1.TrueSize = L$1.Layer.extend({
           break;
         }
     }
+  },
+  _isMultiPolygon: function _isMultiPolygon() {
+    return this._geometryType === 'MultiPolygon';
   }
 });
 

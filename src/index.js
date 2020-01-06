@@ -148,17 +148,33 @@ L.TrueSize = L.Layer.extend({
   },
 
   _getBearingDistance(center) {
-    return turfCoordAll(this._currentLayer.feature).map(coord => {
-      const bearing = turfBearing(center, coord);
-      const distance = turfDistance(center, coord, { units: 'kilometers' });
-      return { bearing, distance };
-    });
+    if (this._isMultiPolygon()) {
+      return this._currentLayer.feature.geometry.coordinates
+        .map(coords => coords[0].map(coord => this._getBearingAndDistance(center, coord)));
+    }
+
+    return turfCoordAll(this._currentLayer.feature)
+      .map(coord => this._getBearingAndDistance(center, coord));
+  },
+
+  _getBearingAndDistance(center, coord) {
+    const bearing = turfBearing(center, coord);
+    const distance = turfDistance(center, coord, { units: 'kilometers' });
+    return { bearing, distance };
   },
 
   _redraw(newPos) {
-    const newPoints = this._initialBearingDistance.map(params => {
-      return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
-    });
+    let newPoints;
+
+    if (this._isMultiPolygon()) {
+      newPoints = this._initialBearingDistance.map(coords => [coords.map(params => {
+        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+      })]);
+    } else {
+      newPoints = this._initialBearingDistance.map(params => {
+        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+      });
+    }
 
     const newFeature = {
       "type": "Feature",
@@ -201,7 +217,7 @@ L.TrueSize = L.Layer.extend({
         break;
       }
       case 'MultiPolygon': {
-        return [[point]];
+        return point;
         break;
       }
       default: {
@@ -209,6 +225,10 @@ L.TrueSize = L.Layer.extend({
         break;
       }
     }
+  },
+
+  _isMultiPolygon() {
+    return this._geometryType === 'MultiPolygon';
   }
 });
 

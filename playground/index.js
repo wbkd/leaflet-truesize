@@ -214,5 +214,4 @@ const Playground = {
   },
 }
 
-
 Playground.init('#map', [polygon, linestring], options);
