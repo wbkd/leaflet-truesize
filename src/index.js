@@ -8,11 +8,11 @@ let id = 0;
 
 L.TrueSize = L.Layer.extend({
   geoJSON: {
-    "type": "Feature",
-    "properties": {},
-    "geometry": {
-      "type": "Polygon",
-      "coordinates": []
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'Polygon',
+      coordinates: []
     }
   },
   options: {
@@ -23,10 +23,10 @@ L.TrueSize = L.Layer.extend({
     lineCap: 'round',
     lineJoin: 'round',
     dashArray: null,
-    dashOffset:	null,
-    fill:	true,
+    dashOffset: null,
+    fill: true,
     fillColor: '#FF0000',
-    fillOpacity:	0.3,
+    fillOpacity: 0.3,
     fillRule: 'evenodd',
     className: null,
     markerDiv: null,
@@ -49,6 +49,16 @@ L.TrueSize = L.Layer.extend({
     this._currentId = id++;
   },
 
+  setCenter(center) {
+    const layerCenter = this._currentLayer.getBounds().getCenter();
+    this._initialBearingDistance = this._getBearingDistance([
+      layerCenter.lng,
+      layerCenter.lat
+    ]);
+
+    this._redraw(center.slice(0).reverse());
+  },
+
   onAdd(map) {
     this._map = map;
     this._geoJSONLayer.addTo(this._map);
@@ -56,8 +66,7 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-    const centerCoords = this._currentLayer.getCenter();
-    const center = [centerCoords.lng, centerCoords.lat];
+    const centerCoords = this._currentLayer.getBounds().getCenter();
 
     // wrap currentlayer into draggable layer
     this._createDraggable(this._currentLayer);
@@ -70,7 +79,11 @@ L.TrueSize = L.Layer.extend({
 
   _createMarker(center, options) {
     const { markerClass, markerDiv, iconAnchor } = options;
-    const dragIcon = L.divIcon({ className: markerClass, html: markerDiv, iconAnchor });
+    const dragIcon = L.divIcon({
+      className: markerClass,
+      html: markerDiv,
+      iconAnchor
+    });
     const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
     return this._addMarkerHooks(dragMarker);
@@ -79,7 +92,7 @@ L.TrueSize = L.Layer.extend({
   _addMarkerHooks(marker) {
     return marker
       .on('dragstart', this._onMarkerDragStart, this)
-      .on('drag', this._onMarkerDrag, this)
+      .on('drag', this._onMarkerDrag, this);
   },
 
   _onMarkerDragStart(evt) {
@@ -103,7 +116,12 @@ L.TrueSize = L.Layer.extend({
     // for ios we use the native events instead of leaflet events
     // because it´s not working correctly with the dragstart and drag evt
     if (isIos) {
-      L.DomEvent.on(item._dragStartTarget, 'touchstart', this._onDragStart, this);
+      L.DomEvent.on(
+        item._dragStartTarget,
+        'touchstart',
+        this._onDragStart,
+        this
+      );
       L.DomEvent.on(item._dragStartTarget, 'touchmove', this._onDrag, this);
 
       return item;
@@ -111,11 +129,11 @@ L.TrueSize = L.Layer.extend({
 
     return item
       .on('dragstart', this._onDragStart, this)
-      .on('drag', this._onDrag, this)
+      .on('drag', this._onDrag, this);
   },
 
   _onDragStart(evt) {
-    const event =  evt.touches ? evt.touches[0] : evt.target;
+    const event = evt.touches ? evt.touches[0] : evt.target;
     const pos = this._getPositionFromEvent(event);
     const coords = this._getLatLngFromPosition(pos);
 
@@ -123,7 +141,7 @@ L.TrueSize = L.Layer.extend({
   },
 
   _onDrag(evt) {
-    const event =  evt.touches ? evt.touches[0] : evt.originalEvent;
+    const event = evt.touches ? evt.touches[0] : evt.originalEvent;
     const pos = this._getPositionFromEvent(event);
     const coords = this._getLatLngFromPosition(pos);
 
@@ -149,12 +167,14 @@ L.TrueSize = L.Layer.extend({
 
   _getBearingDistance(center) {
     if (this._isMultiPolygon()) {
-      return this._currentLayer.feature.geometry.coordinates
-        .map(coords => coords[0].map(coord => this._getBearingAndDistance(center, coord)));
+      return this._currentLayer.feature.geometry.coordinates.map(coords =>
+        coords[0].map(coord => this._getBearingAndDistance(center, coord))
+      );
     }
 
-    return turfCoordAll(this._currentLayer.feature)
-      .map(coord => this._getBearingAndDistance(center, coord));
+    return turfCoordAll(this._currentLayer.feature).map(coord =>
+      this._getBearingAndDistance(center, coord)
+    );
   },
 
   _getBearingAndDistance(center, coord) {
@@ -167,21 +187,27 @@ L.TrueSize = L.Layer.extend({
     let newPoints;
 
     if (this._isMultiPolygon()) {
-      newPoints = this._initialBearingDistance.map(coords => [coords.map(params => {
-        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
-      })]);
+      newPoints = this._initialBearingDistance.map(coords => [
+        coords.map(params => {
+          return destination(newPos, params.distance, params.bearing, {
+            units: 'kilometers'
+          }).geometry.coordinates;
+        })
+      ]);
     } else {
       newPoints = this._initialBearingDistance.map(params => {
-        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+        return destination(newPos, params.distance, params.bearing, {
+          units: 'kilometers'
+        }).geometry.coordinates;
       });
     }
 
     const newFeature = {
-      "type": "Feature",
-      "properties": {},
-      "geometry": {
-        "type": this._geometryType,
-        "coordinates": this._getCoordsByType(newPoints, this._geometryType)
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: this._geometryType,
+        coordinates: this._getCoordsByType(newPoints, this._geometryType)
       }
     };
 
@@ -193,7 +219,8 @@ L.TrueSize = L.Layer.extend({
     // add draggable hook again, as we using internal a new layer
     // center marker if existing
     this._createDraggable(this._currentLayer);
-    this._dragMarker && this._dragMarker.setLatLng(this._currentLayer.getCenter());
+    this._dragMarker &&
+      this._dragMarker.setLatLng(this._currentLayer.getCenter());
   },
 
   onRemove(map) {

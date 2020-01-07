@@ -2257,11 +2257,11 @@ var id = 0;
 
 L$1.TrueSize = L$1.Layer.extend({
   geoJSON: {
-    "type": "Feature",
-    "properties": {},
-    "geometry": {
-      "type": "Polygon",
-      "coordinates": []
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'Polygon',
+      coordinates: []
     }
   },
   options: {
@@ -2299,6 +2299,12 @@ L$1.TrueSize = L$1.Layer.extend({
     // for unique plugin id
     this._currentId = id++;
   },
+  setCenter: function setCenter(center) {
+    var layerCenter = this._currentLayer.getBounds().getCenter();
+    this._initialBearingDistance = this._getBearingDistance([layerCenter.lng, layerCenter.lat]);
+
+    this._redraw(center.slice(0).reverse());
+  },
   onAdd: function onAdd(map) {
     this._map = map;
     this._geoJSONLayer.addTo(this._map);
@@ -2306,8 +2312,7 @@ L$1.TrueSize = L$1.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-    var centerCoords = this._currentLayer.getCenter();
-    var center = [centerCoords.lng, centerCoords.lat];
+    var centerCoords = this._currentLayer.getBounds().getCenter();
 
     // wrap currentlayer into draggable layer
     this._createDraggable(this._currentLayer);
@@ -2322,7 +2327,11 @@ L$1.TrueSize = L$1.Layer.extend({
         markerDiv = options.markerDiv,
         iconAnchor = options.iconAnchor;
 
-    var dragIcon = L$1.divIcon({ className: markerClass, html: markerDiv, iconAnchor: iconAnchor });
+    var dragIcon = L$1.divIcon({
+      className: markerClass,
+      html: markerDiv,
+      iconAnchor: iconAnchor
+    });
     var dragMarker = L$1.marker(center, { icon: dragIcon, draggable: true });
 
     return this._addMarkerHooks(dragMarker);
@@ -2423,21 +2432,25 @@ L$1.TrueSize = L$1.Layer.extend({
     if (this._isMultiPolygon()) {
       newPoints = this._initialBearingDistance.map(function (coords) {
         return [coords.map(function (params) {
-          return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+          return destination(newPos, params.distance, params.bearing, {
+            units: 'kilometers'
+          }).geometry.coordinates;
         })];
       });
     } else {
       newPoints = this._initialBearingDistance.map(function (params) {
-        return destination(newPos, params.distance, params.bearing, { units: 'kilometers' }).geometry.coordinates;
+        return destination(newPos, params.distance, params.bearing, {
+          units: 'kilometers'
+        }).geometry.coordinates;
       });
     }
 
     var newFeature = {
-      "type": "Feature",
-      "properties": {},
-      "geometry": {
-        "type": this._geometryType,
-        "coordinates": this._getCoordsByType(newPoints, this._geometryType)
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: this._geometryType,
+        coordinates: this._getCoordsByType(newPoints, this._geometryType)
       }
     };
 
