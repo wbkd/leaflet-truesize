@@ -1,9 +1,9 @@
 const polygon = {
-  "type": "Feature",
-  "properties": {},
-  "geometry": {
-    "type": "Polygon",
-    "coordinates": [
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'Polygon',
+    coordinates: [
       [
         [77.837451, 35.49401],
         [78.912269, 34.321936],
@@ -147,33 +147,25 @@ const polygon = {
 };
 
 const linestring = {
-  "type": "Feature",
-  "properties": {},
-  "geometry": {
-    "type": "LineString",
-    "coordinates": [
-      [
-        4.350585937499999,
-        54.470037612805754
-      ],
-      [
-        8.61328125,
-        54.77534585936447
-      ],
-      [
-        11.42578125,
-        54.67383096593114
-      ]
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [4.350585937499999, 54.470037612805754],
+      [8.61328125, 54.77534585936447],
+      [11.42578125, 54.67383096593114]
     ]
   }
-}
+};
 
 const options = {
   stroke: true,
   weight: 2,
   lineJoin: 'round',
   opacity: 1,
-  markerDiv: '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M31.922 16.618a.99.99 0 0 0-.216-.324l-4-4a1 1 0 0 0-1.414 1.414L28.586 16H18V5.414l2.292 2.292a1 1 0 0 0 1.414-1.414l-4-4-.01-.006a.978.978 0 0 0-.314-.208A.974.974 0 0 0 17 2h-.004a.999.999 0 0 0-.692.286l-.012.006-4 4a1 1 0 0 0 1.414 1.414L16 5.414V16H5.414l2.292-2.292a1 1 0 0 0-1.414-1.414l-4 4-.006.01a.978.978 0 0 0-.208.314A.974.974 0 0 0 2 17v.004a.999.999 0 0 0 .286.692l.006.012 4 4a1 1 0 0 0 1.414-1.414L5.414 18H16v10.586l-2.292-2.292a1 1 0 0 0-1.414 1.414l4 4a.99.99 0 0 0 .702.292H17c.13 0 .26-.026.382-.078a.99.99 0 0 0 .324-.216l4-4a1 1 0 0 0-1.414-1.414L18 28.586V18h10.586l-2.292 2.292a1 1 0 0 0 1.414 1.414l4-4a.99.99 0 0 0 .292-.702V17c0-.13-.026-.26-.078-.382z"/></svg>',
+  markerDiv:
+    '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M31.922 16.618a.99.99 0 0 0-.216-.324l-4-4a1 1 0 0 0-1.414 1.414L28.586 16H18V5.414l2.292 2.292a1 1 0 0 0 1.414-1.414l-4-4-.01-.006a.978.978 0 0 0-.314-.208A.974.974 0 0 0 17 2h-.004a.999.999 0 0 0-.692.286l-.012.006-4 4a1 1 0 0 0 1.414 1.414L16 5.414V16H5.414l2.292-2.292a1 1 0 0 0-1.414-1.414l-4 4-.006.01a.978.978 0 0 0-.208.314A.974.974 0 0 0 2 17v.004a.999.999 0 0 0 .286.692l.006.012 4 4a1 1 0 0 0 1.414-1.414L5.414 18H16v10.586l-2.292-2.292a1 1 0 0 0-1.414 1.414l4 4a.99.99 0 0 0 .702.292H17c.13 0 .26-.026.382-.078a.99.99 0 0 0 .324-.216l4-4a1 1 0 0 0-1.414-1.414L18 28.586V18h10.586l-2.292 2.292a1 1 0 0 0 1.414 1.414l4-4a.99.99 0 0 0 .292-.702V17c0-.13-.026-.26-.078-.382z"/></svg>',
   markerClass: 'drag-icon',
   iconAnchor: [16, 16]
 };
@@ -183,8 +175,11 @@ const Playground = {
     this._container = document.querySelector(_containerID);
 
     this._map = this.mountMap(this._container);
-    this._plugins = _data.map(entry => this.mountPlugin(this._map, entry, _options));
-    this._plugins.map(plugin => this.addButtonHandler(this._map, plugin));
+    this._plugins = _data.map(entry =>
+      this.mountPlugin(this._map, entry, _options)
+    );
+
+    this.addButtonHandler(this._plugins[1]);
   },
 
   mountMap(_container) {
@@ -192,14 +187,17 @@ const Playground = {
       center: [40, 60],
       zoom: 3,
       zoomControl: false,
-      zoomDelta: .25,
-      zoomSnap: .25,
+      zoomDelta: 0.25,
+      zoomSnap: 0.25
     });
 
-    new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png', {
-      attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
-      detectRetina: true
-    }).addTo(map);
+    new L.tileLayer(
+      'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png',
+      {
+        attribution: `attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>`,
+        detectRetina: true
+      }
+    ).addTo(map);
 
     return map;
   },
@@ -208,10 +206,18 @@ const Playground = {
     return new L.TrueSize(_data, _options).addTo(_map);
   },
 
-  addButtonHandler(_map, _plugin) {
+  addButtonHandler(_plugin) {
     const removeBtn = document.querySelector('.remove');
-    removeBtn.addEventListener('click', () => _map.removeLayer(_plugin));
-  },
-}
+    removeBtn.addEventListener('click', () => this._map.removeLayer(_plugin));
+
+    const centerBtn = document.querySelector('.center');
+    centerBtn.addEventListener('click', () =>
+      this._plugins[0].setCenter([52.52, 13.4])
+    );
+
+    const resetBtn = document.querySelector('.reset');
+    resetBtn.addEventListener('click', () => this._plugins[0].reset());
+  }
+};
 
 Playground.init('#map', [polygon, linestring], options);

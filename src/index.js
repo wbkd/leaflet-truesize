@@ -46,18 +46,21 @@ L.TrueSize = L.Layer.extend({
 
   _initGeoJson(geoJSON, options) {
     this._geoJSONLayer = L.geoJSON(geoJSON, options);
+
     // for unique plugin id
     this._currentId = id++;
   },
 
   setCenter(center) {
-    const layerCenter = this._currentLayer.getBounds().getCenter();
-    this._initialBearingDistance = this._getBearingDistance([
-      layerCenter.lng,
-      layerCenter.lat
-    ]);
-
     this._redraw(center.slice(0).reverse());
+  },
+
+  reset() {
+    if (!this._origCenter) {
+      return false;
+    }
+
+    this._redraw(this._origCenter);
   },
 
   onAdd(map) {
@@ -67,10 +70,16 @@ L.TrueSize = L.Layer.extend({
     // our currentlayer is always the first layer of geoJson layersgroup
     // but has a dynamic key
     this._currentLayer = this._geoJSONLayer.getLayers()[0];
-    const centerCoords = this._currentLayer.getBounds().getCenter();
+    const centerCoords = this._currentLayer.getCenter();
+    this._origCenter = [centerCoords.lng, centerCoords.lat];
 
     // wrap currentlayer into draggable layer
     this._createDraggable(this._currentLayer);
+
+    this._initialBearingDistance = this._getBearingDistance([
+      centerCoords.lng,
+      centerCoords.lat
+    ]);
 
     if (this._options.markerDiv && this._options.markerDiv.length) {
       this._dragMarker = this._createMarker(centerCoords, this._options);
@@ -93,8 +102,9 @@ L.TrueSize = L.Layer.extend({
 
   _onMarkerDragStart(evt) {
     const { lng, lat } = evt.target._latlng;
+    const center = this._currentLayer.getCenter();
 
-    this._initialBearingDistance = this._getBearingDistance([lng, lat]);
+    this._dragOffset = [lng - center.lng, lat - center.lat];
   },
 
   _onMarkerDrag(evt) {
@@ -114,8 +124,9 @@ L.TrueSize = L.Layer.extend({
     const event = evt.touches ? evt.touches[0] : evt.target;
     const pos = this._getPositionFromEvent(event);
     const coords = this._getLatLngFromPosition(pos);
+    const center = this._currentLayer.getCenter();
 
-    this._initialBearingDistance = this._getBearingDistance(coords);
+    this._dragOffset = [coords[0] - center.lng, coords[1] - center.lat];
   },
 
   _onDrag(evt) {
@@ -123,7 +134,10 @@ L.TrueSize = L.Layer.extend({
     const pos = this._getPositionFromEvent(event);
     const coords = this._getLatLngFromPosition(pos);
 
-    this._redraw(coords);
+    this._redraw([
+      coords[0] - this._dragOffset[0],
+      coords[1] - this._dragOffset[1]
+    ]);
   },
 
   _getPositionFromEvent(evt) {
@@ -165,16 +179,16 @@ L.TrueSize = L.Layer.extend({
     let newPoints;
 
     if (this._isMultiPolygon()) {
-      newPoints = this._initialBearingDistance.map(coords => [
-        coords.map(params => {
-          return turfDestination(newPos, params.distance, params.bearing, {
+      newPoints = this._initialBearingDistance.map(params => [
+        params.map(param => {
+          return turfDestination(newPos, param.distance, param.bearing, {
             units: 'kilometers'
           }).geometry.coordinates;
         })
       ]);
     } else {
-      newPoints = this._initialBearingDistance.map(params => {
-        return turfDestination(newPos, params.distance, params.bearing, {
+      newPoints = this._initialBearingDistance.map(param => {
+        return turfDestination(newPos, param.distance, param.bearing, {
           units: 'kilometers'
         }).geometry.coordinates;
       });

@@ -31,12 +31,12 @@ export default [
       }),
       !isProd &&
         livereload({
-          watch: ['docs', 'playground', 'dist']
+          watch: ['playground', 'dist']
         }),
       !isProd &&
         serve({
           port: 3000,
-          contentBase: ['playground', 'docs', 'dist']
+          contentBase: ['playground', 'dist']
         }),
       !isProd &&
         html({
