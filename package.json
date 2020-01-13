@@ -37,8 +37,8 @@
   },
   "dependencies": {
     "@turf/bearing": "^5.1.5",
+    "@turf/destination": "^6.0.1",
     "@turf/distance": "^5.1.5",
-    "@turf/invariant": "^6.0.1",
     "@turf/meta": "^6.0.1"
   }
 }

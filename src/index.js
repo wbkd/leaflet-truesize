@@ -1,8 +1,8 @@
 import L from 'leaflet';
 import turfBearing from '@turf/bearing';
 import turfDistance from '@turf/distance';
+import turfDestination from '@turf/destination';
 import { coordAll as turfCoordAll } from '@turf/meta';
-import { destination, isIos, isUndefined } from './helper';
 
 let id = 0;
 
@@ -15,6 +15,7 @@ L.TrueSize = L.Layer.extend({
       coordinates: []
     }
   },
+
   options: {
     color: '#FF0000',
     stroke: true,
@@ -84,13 +85,8 @@ L.TrueSize = L.Layer.extend({
       html: markerDiv,
       iconAnchor
     });
-    const dragMarker = L.marker(center, { icon: dragIcon, draggable: true });
 
-    return this._addMarkerHooks(dragMarker);
-  },
-
-  _addMarkerHooks(marker) {
-    return marker
+    return L.marker(center, { icon: dragIcon, draggable: true })
       .on('dragstart', this._onMarkerDragStart, this)
       .on('drag', this._onMarkerDrag, this);
   },
@@ -109,25 +105,7 @@ L.TrueSize = L.Layer.extend({
     const draggablePath = new L.Draggable(layer._path);
     draggablePath.enable();
 
-    return this._addPathHooks(draggablePath);
-  },
-
-  _addPathHooks(item) {
-    // for ios we use the native events instead of leaflet events
-    // because it´s not working correctly with the dragstart and drag evt
-    if (isIos) {
-      L.DomEvent.on(
-        item._dragStartTarget,
-        'touchstart',
-        this._onDragStart,
-        this
-      );
-      L.DomEvent.on(item._dragStartTarget, 'touchmove', this._onDrag, this);
-
-      return item;
-    }
-
-    return item
+    draggablePath
       .on('dragstart', this._onDragStart, this)
       .on('drag', this._onDrag, this);
   },
@@ -149,7 +127,7 @@ L.TrueSize = L.Layer.extend({
   },
 
   _getPositionFromEvent(evt) {
-    if (!isUndefined(evt._startPoint)) {
+    if (typeof evt._startPoint !== 'undefined') {
       return evt._startPoint;
     }
 
@@ -189,14 +167,14 @@ L.TrueSize = L.Layer.extend({
     if (this._isMultiPolygon()) {
       newPoints = this._initialBearingDistance.map(coords => [
         coords.map(params => {
-          return destination(newPos, params.distance, params.bearing, {
+          return turfDestination(newPos, params.distance, params.bearing, {
             units: 'kilometers'
           }).geometry.coordinates;
         })
       ]);
     } else {
       newPoints = this._initialBearingDistance.map(params => {
-        return destination(newPos, params.distance, params.bearing, {
+        return turfDestination(newPos, params.distance, params.bearing, {
           units: 'kilometers'
         }).geometry.coordinates;
       });
@@ -237,19 +215,15 @@ L.TrueSize = L.Layer.extend({
     switch (type) {
       case 'LineString': {
         return point;
-        break;
       }
       case 'Polygon': {
         return [point];
-        break;
       }
       case 'MultiPolygon': {
         return point;
-        break;
       }
       default: {
         return [point];
-        break;
       }
     }
   },
