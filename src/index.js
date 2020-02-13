@@ -39,6 +39,7 @@ L.TrueSize = L.Layer.extend({
     // merge default and passed options
     this._options = Object.assign({}, this.options, options);
     this._geometryType = geoJSON.geometry.type;
+    this._isMultiPolygon = this._geometryType === 'MultiPolygon';
 
     L.Util.setOptions(this, this._options);
     this._initGeoJson(geoJSON, this._options);
@@ -158,9 +159,9 @@ L.TrueSize = L.Layer.extend({
   },
 
   _getBearingDistance(center) {
-    if (this._isMultiPolygon()) {
-      return this._currentLayer.feature.geometry.coordinates.map(coords =>
-        coords[0].map(coord => this._getBearingAndDistance(center, coord))
+    if (this._isMultiPolygon) {
+      return this._currentLayer.feature.geometry.coordinates[0].map(coords =>
+        coords.map(coord => this._getBearingAndDistance(center, coord))
       );
     }
 
@@ -178,7 +179,7 @@ L.TrueSize = L.Layer.extend({
   _redraw(newPos) {
     let newPoints;
 
-    if (this._isMultiPolygon()) {
+    if (this._isMultiPolygon) {
       newPoints = this._initialBearingDistance.map(params => [
         params.map(param => {
           return turfDestination(newPos, param.distance, param.bearing, {
@@ -240,10 +241,6 @@ L.TrueSize = L.Layer.extend({
         return [point];
       }
     }
-  },
-
-  _isMultiPolygon() {
-    return this._geometryType === 'MultiPolygon';
   }
 });
 

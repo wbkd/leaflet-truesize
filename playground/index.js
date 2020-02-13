@@ -159,6 +159,32 @@ const linestring = {
   }
 };
 
+const mulipolygon = {
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'MultiPolygon',
+    coordinates: [
+      [
+        [
+          [3.076171875, 41.77131167976407],
+          [26.19140625, 41.77131167976407],
+          [26.19140625, 53.38332836757156],
+          [3.076171875, 53.38332836757156],
+          [3.076171875, 41.77131167976407]
+        ],
+        [
+          [31.376953125, 48.86471476180277],
+          [34.27734375, 48.86471476180277],
+          [34.27734375, 51.28940590271679],
+          [31.376953125, 51.28940590271679],
+          [31.376953125, 48.86471476180277]
+        ]
+      ]
+    ]
+  }
+};
+
 const options = {
   stroke: true,
   weight: 2,
@@ -220,4 +246,4 @@ const Playground = {
   }
 };
 
-Playground.init('#map', [polygon, linestring], options);
+Playground.init('#map', [polygon, mulipolygon], options);
