@@ -1,9 +1,3 @@
-import L from 'leaflet';
-import turfBearing from '@turf/bearing';
-import turfDistance from '@turf/distance';
-import turfDestination from '@turf/destination';
-import { coordAll as turfCoordAll } from '@turf/meta';
-
 let id = 0;
 
 L.TrueSize = L.Layer.extend({
@@ -173,14 +167,14 @@ L.TrueSize = L.Layer.extend({
       );
     }
 
-    return turfCoordAll(this._currentLayer.feature).map(coord =>
+    return turf.coordAll(this._currentLayer.feature).map(coord =>
       this._getBearingAndDistance(center, coord)
     );
   },
 
   _getBearingAndDistance(center, coord) {
-    const bearing = turfBearing(center, coord);
-    const distance = turfDistance(center, coord, { units: 'kilometers' });
+    const bearing = turf.bearing(center, coord);
+    const distance = turf.distance(center, coord, { units: 'kilometers' });
     return { bearing, distance };
   },
 
@@ -190,14 +184,14 @@ L.TrueSize = L.Layer.extend({
     if (this._isMultiPolygon) {
       newPoints = this._initialBearingDistance.map(params => [
         params.map(param => {
-          return turfDestination(newPos, param.distance, param.bearing, {
+          return turf.destination(newPos, param.distance, param.bearing, {
             units: 'kilometers'
           }).geometry.coordinates;
         })
       ]);
     } else {
       newPoints = this._initialBearingDistance.map(param => {
-        return turfDestination(newPos, param.distance, param.bearing, {
+        return turf.destination(newPos, param.distance, param.bearing, {
           units: 'kilometers'
         }).geometry.coordinates;
       });
