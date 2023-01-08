@@ -214,13 +214,24 @@ L.TrueSize = L.Layer.extend({
 
     // our currentlayer which accept dnd events is always the first layer of 
     // geoJson layersgroup and shoud not be removed till drag end
+    this._redrawGeoJSON(newFeature);
+    this._dragMarker &&
+      this._redrawMarker();
+  },
+
+  _redrawGeoJSON(feature) {
     const layers = this._geoJSONLayer.getLayers();
     if (layers.length > 1) {
       this._geoJSONLayer.removeLayer(layers[1]);
     }
-    this._geoJSONLayer.addData(newFeature);
-    this._dragMarker &&
-      this._dragMarker.setLatLng(this._currentLayer.getCenter());
+    this._geoJSONLayer.addData(feature);
+  },
+
+  _redrawMarker() {
+    const layers = this._geoJSONLayer.getLayers();
+    if (layers.length > 1) {
+      this._dragMarker.setLatLng(layers[1].getCenter());
+    }
   },
 
   onRemove(map) {
